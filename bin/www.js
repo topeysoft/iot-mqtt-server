@@ -16,7 +16,7 @@ var env='development', envArray=envArg.split('=');
 if(envArray.length>1){
   env=envArray[1]||"development";
 }
- 
+  
 process.env.NODE_ENV = env;
 
 var portArg = process.argv.find(function(arg) { 
