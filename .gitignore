@@ -6,6 +6,7 @@
 .project
 .metadata
 tmp/
+bin/logs
 node_modules
 logs/
 */node_modules/
