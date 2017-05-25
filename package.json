@@ -20,7 +20,7 @@
     "git-commit": "npm run git-add && git commit -m \"code update\"",
     "git-push": "git push origin master --force  && git checkout master",
     "git-publish": "npm run git-commit && npm run git-push"
-  },
+  }, 
   "keywords": [],
   "author": "",
   "license": "ISC",
