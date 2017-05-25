@@ -1,0 +1,9 @@
+// forever/dev config 
+{
+	// Comments are supported
+    "uid": "tscsmarthub",
+    "append": true,
+    "watch": false,
+    "script": "bin/www.js",
+    "sourceDir": "_HOME_DIR_/server/hub"
+}
