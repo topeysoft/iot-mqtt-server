@@ -6,14 +6,14 @@
 .project
 .metadata
 tmp/
-bin/logs
+#bin/logs
 node_modules
 logs/
 */node_modules/
 *.tmp
 *.bak
 *.swp
-*~.nib
+#*~.nib
 local.properties
 .classpath
 .settings/
