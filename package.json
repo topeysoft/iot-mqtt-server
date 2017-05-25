@@ -10,7 +10,7 @@
     "grunt": "grunt",
     "heroku:deploy": "npm run heroku:build && cd ./deploy && git add . && git commit -am '.' && git push heroku master",
     "grunt:w": "grunt watch",
-    "start": "node ./bin/www.js --env=production --port=5200",
+    "start": "node ./bin/www.js --env=production",
     "test": "mocha --opts mocha.opts && rm -rf test",
     "test:w": "mocha --opts mocha.opts --watch",
     "build": "tsc",
@@ -20,10 +20,10 @@
     "git-commit": "npm run git-add && git commit -m \"code update\"",
     "git-push": "git push origin master --force  && git checkout master",
     "git-publish": "npm run git-commit && npm run git-push"
-  }, 
+  },  
   "keywords": [], 
-  "author": "",
-  "license": "ISC",
+  "author": "", 
+  "license": "ISC", 
   "devDependencies": {
     "@angular/cli": "^1.0.0",
     "@angular/compiler-cli": "^2.3.1",

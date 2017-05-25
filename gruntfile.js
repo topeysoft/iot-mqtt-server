@@ -99,6 +99,16 @@ module.exports = function (grunt) {
     "ts:deploy",
     "copy:deploy"
   ]);
+  grunt.registerTask("default", [
+    "ts:app",
+    "copy:build",
+    "watch"
+  ]);
+  grunt.registerTask("build", [
+    "ts:app",
+    "copy:build",
+    "watch"
+  ]);
   grunt.registerTask("debug:build", [
     "ts:app",
     "copy:build",
