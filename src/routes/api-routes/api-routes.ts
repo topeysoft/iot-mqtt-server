@@ -3,6 +3,7 @@ import { DevicesApiRoute } from './devices-routes';
 import { authenticationMiddleware } from '../../middlewares/security/authentication/authentication-middleware';
 import { OK, UNAUTHORIZED } from "http-status-codes";
 import { RoomsApiRoute } from './rooms-routes';
+import { NodesApiRoute } from './nodes-routes';
 export class ApiRoutes {
     constructor(app: Express, basePath: string = '/api') {
         var router = Router();
@@ -10,6 +11,7 @@ export class ApiRoutes {
             res.json({ message: 'Welcome to our api!' });
         });
         new DevicesApiRoute(router);
+        new NodesApiRoute(router);
         new RoomsApiRoute(router);
        var response:Response;
 

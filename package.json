@@ -17,13 +17,13 @@
     "test": "mocha --opts mocha.opts && rm -rf test",
     "test:w": "mocha --opts mocha.opts --watch",
     "build": "grunt build",
-    "publish": "npm version patch --force &&  npm run git-publish && npm publish --access=public",
-    "git-add": "git add -A .",
-    "git-commit": "npm run git-add && git commit -m \"code update\"",
-    "git-push": "git push origin master --force  && git checkout master",
-    "git-publish": "npm run git-commit && npm run git-push"
+    "npm:publish": "npm version patch --force &&  npm run git:publish && npm publish --access=public",
+    "git:add": "git add -A .",
+    "git:commit": "npm run git:add && git commit -m \"code update\"",
+    "git:push": "git push origin master --force  && git checkout master",
+    "git:publish": "npm run git:commit && npm run git:push"
   },
-  "keywords": [],
+  "keywords": [], 
   "author": "",
   "license": "ISC",
   "devDependencies": {
