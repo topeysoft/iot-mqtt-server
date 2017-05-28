@@ -12,7 +12,7 @@
     "grunt:w": "grunt watch",
     "start": "forever start ./bin/www.js --env=production --port=3000",
     "stop": "forever stop ./bin/www.js",
-    "restart": "forever stop ./bin/www.js",
+    "restart": "forever restart ./bin/www.js",
     "logs": "forever logs ./bin/www.js",
     "test": "mocha --opts mocha.opts && rm -rf test",
     "test:w": "mocha --opts mocha.opts --watch",
