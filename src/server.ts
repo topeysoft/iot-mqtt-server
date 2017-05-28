@@ -77,7 +77,7 @@ export class Server {
     }
     private initializeRepository() {
         var config = ConfigManager.getConfig();
-        Repository.initialize(config.mongodb.connectionUrl, RepositoryType.MongoDb)
+        Repository.initialize(config.mongodb.connectionUrl, true);
         // Repository.initialize(config.tingodb.dbPath, RepositoryType.TingoDB)
     } 
 

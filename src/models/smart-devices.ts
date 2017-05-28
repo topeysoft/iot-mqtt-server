@@ -1,9 +1,8 @@
 import { Required } from '../descriptors/validation-descriptors'
-export class SmartDevice {
-    _id: string;
+import { BaseModel } from './base';
+export class SmartDevice extends BaseModel{
     @Required('Device id is required.')
     device_id: string;
-    name: string;
     type: string;
 }
 
@@ -26,14 +25,18 @@ export class HomieDevice {
 
 
 export class HomieNode {
-    id: string
-    capabilities: HomieNodeCapability[] = []
+    _id:string;
+    node_id: string;
+    device_id: string;
+    capabilities: HomieNodeCapability[] = [];
     type: string = '';
 
 
 }
 export class HomieNodeCapability {
     identifier;
+    value:any;
+    state:string;
     is_range:boolean;
     is_settable: boolean;
     min: number;

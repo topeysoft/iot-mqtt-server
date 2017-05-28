@@ -1,7 +1,8 @@
 import { NextFunction, Request, Response, Router } from 'express';
-import { DeviceRepository } from '../../repository/devices/devices-repo';
+import { Repository } from '../../repository/repository';
 import { ObjectID } from 'mongodb';
 import { SmartDevice } from '../../models/smart-devices';
+import { RepoQueryParams } from '../../repository/repo-query-params';
 export class DevicesApiRoute {
 
   private basePath: string = '/devices';
@@ -42,13 +43,16 @@ export class DevicesApiRoute {
   }
 
   private getManyDevices(req: Request, res: Response) {
-    var queryParams:{skip:number, limit:number} = req.query;
-    var skip=queryParams.skip||0;
-    var limit=queryParams.limit||1000;
-    skip=parseInt(skip+'');
-    limit=parseInt(limit+'');
-    var fields={};
-    DeviceRepository.getMany({}, fields, skip, limit).then((devices)=>{
+    req.query=req.query||{};
+    var fields:string=req.query['fields']||'';
+    var queryParams:RepoQueryParams = req.query;
+    queryParams.skip=+queryParams.skip||0;
+    queryParams.limit=+queryParams.limit||1000;
+    queryParams.fields={};
+    fields.split(',').concat(fields.split('|')).filter(s=>{
+      return (s && s.trim().length>0)
+    });
+    Repository.getMany('devices',queryParams).then((devices)=>{
       res.json(devices);
     })
     .catch((err)=>{
@@ -63,7 +67,7 @@ export class DevicesApiRoute {
       filter.$or.push({_id:new ObjectID(id)});
     }catch(e){}
     
-     DeviceRepository.getOne(filter).then((device)=>{
+     Repository.getOne('devices',filter).then((device)=>{
       res.json(device);
     })
     .catch((err)=>{
@@ -73,7 +77,7 @@ export class DevicesApiRoute {
   }
   private createDevice(req: Request, res: Response) {
      var device:SmartDevice = req.body;
-     DeviceRepository.upsert(device).then((device)=>{
+     Repository.insertOne('devices', device).then((device)=>{
       res.json(device);
     })
     .catch((err)=>{
@@ -83,7 +87,12 @@ export class DevicesApiRoute {
   }
   private updateDevice(req: Request, res: Response) {
      var device:SmartDevice = req.body;
-     DeviceRepository.upsert(device).then((device)=>{
+      var id=req.params.device_id;
+    var filter:any={$or:[{device_id:id}]};
+    try{
+      filter.$or.push({_id:new ObjectID(id)});
+    }catch(e){}
+     Repository.updateOne('devices',filter,device).then((device)=>{
       res.json(device);
     })
     .catch((err)=>{
@@ -93,17 +102,27 @@ export class DevicesApiRoute {
   }
   private partiallyUpdateDevice(req: Request, res: Response) {
     var device:SmartDevice = req.body;
-     DeviceRepository.upsert(device).then((device)=>{
+    var id=req.params.device_id;
+    var filter:any={$or:[{device_id:id}]};
+    try{
+      filter.$or.push({_id:new ObjectID(id)});
+    }catch(e){}
+     Repository.updateOne('devices',filter,device).then((device)=>{
       res.json(device);
     })
     .catch((err)=>{
       console.log(err);
       res.sendStatus(500);
-    });
+    })
   }
   private deleteDevice(req: Request, res: Response) {
-    var id=req.params['device_id'];
-    DeviceRepository.delete(id).then((result)=>{
+    var id=req.params.device_id;
+    var filter:any={$or:[{device_id:id}]};
+    try{
+      filter.$or.push({_id:new ObjectID(id)});
+    }catch(e){}
+    
+    Repository.deleteOne('devices',filter).then((result)=>{
       res.json(result);
     })
     .catch((err)=>{

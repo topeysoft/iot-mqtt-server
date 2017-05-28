@@ -1,5 +1,5 @@
 
-import { MongoClient, MongoError, Db, InsertOneWriteOpResult, InsertWriteOpResult, UpdateWriteOpResult, DeleteWriteOpResultObject, FindOneOptions } from "mongodb";
+import { MongoClient, MongoError, Db, InsertOneWriteOpResult, InsertWriteOpResult, UpdateWriteOpResult, DeleteWriteOpResultObject, FindOneOptions, CollectionAggregationOptions } from "mongodb";
 import { IRepository } from './i-repository';
 import { RepoQueryParams } from './repo-query-params';
 export class MongoRepository {
@@ -36,6 +36,22 @@ export class MongoRepository {
     public static getMany<T>(collectionName: string, queryParams: RepoQueryParams | any): Promise<T[]> {
         return MongoRepository._db.collection(collectionName).find(queryParams.query, queryParams.fields, queryParams.skip, queryParams.limit).toArray();
     }
+
+     public static aggregateOne<T>(collectionName: string, query: Object[] = [], options?: CollectionAggregationOptions): Promise<T> {
+        return new Promise((resolve, reject) => {
+            var cursor = MongoRepository._db.collection(collectionName).aggregate(query, options);
+            cursor.toArray().then(data => {
+                data = data || [null]
+                resolve(data[0]);
+            }).catch(err => {
+                reject(err);
+            });
+        });
+    }
+    public static aggregate<T>(collectionName: string, query: Object[] = [], options?: CollectionAggregationOptions): Promise<T[]> {
+        var cursor = MongoRepository._db.collection(collectionName).aggregate(query, options);
+        return cursor.toArray();
+    }
     public static insertOne<T>(collectionName: string, doc: T): Promise<InsertOneWriteOpResult> {
         return MongoRepository._db.collection(collectionName).insertOne(doc);
     }
@@ -47,6 +63,7 @@ export class MongoRepository {
       var update = {};
       //  if(setDate) doc['last_modified']= new Date().toISOString();
         update[action]=doc;
+        delete update['id'];
         return MongoRepository._db.collection(collectionName).updateOne(filter, update, options);
     }
    

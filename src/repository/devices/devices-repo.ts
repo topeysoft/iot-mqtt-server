@@ -46,13 +46,13 @@ export class DeviceRepository {
                             });
 
                     } else {
-                        Repository.updateOne(this.collectionName, filter, { 'nodes': node }, {}, '$push')
-                            .then((result) => {
-                                resolve(result);
-                            })
-                            .catch(err => {
-                                reject(err);
-                            })
+                        // Repository.updateOne(this.collectionName, filter, { 'nodes': node }, {}, '$push')
+                        //     .then((result) => {
+                        //         resolve(result);
+                        //     })
+                        //     .catch(err => {
+                        //         reject(err);
+                        //     })
                     }
                 })
                 .catch(err => {
