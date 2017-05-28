@@ -24,6 +24,7 @@ export class Server {
         this.passport = new Passport();
         this.app = express();
         this.config();
+        this.setupHeaders();
         this.routes();
         this.api();
         this.moscaServer = new Mqtt().server;
