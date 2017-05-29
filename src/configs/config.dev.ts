@@ -3,6 +3,7 @@ export const DevConfig: any = {
         allowed_origins: [
             'localhost:8100'
             , 'localhost:4200'
+            , 'http://localhost:8000'
             , 'http://localhost:8100'
             , 'http://localhost:4200'
             , 'topeysoft.smart.local:8100'
