@@ -4,6 +4,7 @@ import { ObjectID } from 'mongodb';
 import { Room } from '../../models/room';
 import { BAD_REQUEST, INTERNAL_SERVER_ERROR } from "http-status-codes";
 import { RepoQueryParams } from '../../repository/repo-query-params';
+import { HomieNode } from '../../models/smart-devices';
 export class RoomsApiRoute {
 
   private basePath: string = '/rooms';
@@ -50,15 +51,48 @@ export class RoomsApiRoute {
     queryParams.skip = +queryParams.skip || 0;
     queryParams.limit = +queryParams.limit || 1000;
     queryParams.fields = {};
-    fields.split(',').concat(fields.split('|')).filter(s=>{
-      return (s && s.trim().length>0)
+    fields.split(',').concat(fields.split('|')).filter(s => {
+      return (s && s.trim().length > 0)
     })
-    .forEach(f => {
-      queryParams.fields[f] = 1;
-    });
+      .forEach(f => {
+        queryParams.fields[f] = 1;
+      });
+    // var query = [
+    //   { $unwind: "$control_ids" },
+    //   {
+    //     $lookup: {
+    //       from: "nodes",
+    //       localField: 'control_ids',
+    //       foreignField: '_id.str()',
+    //       as: "controls"
+    //     }
+
+    //   },
+
+    // ]
     console.log(queryParams);
     Repository.getMany('rooms', queryParams).then((rooms) => {
-      res.json(rooms);
+      var done = () => {
+        res.json(rooms);
+      }
+      if (rooms && rooms.length > 0) {
+        Repository.getMany<HomieNode>('nodes', {}).then((nodes) => {
+          if (nodes && nodes.length > 0) {
+            rooms.map((room: Room) => {
+              if (room.control_ids) {
+                room.controls = nodes.filter((node) => {
+                  return room.control_ids.indexOf(node._id.toString()) !== -1;
+                })
+              }
+            });
+            done();
+          } else {
+            done();
+          }
+        });
+      } else {
+        done();
+      }
     })
       .catch((err) => {
         console.log(err);
@@ -93,7 +127,7 @@ export class RoomsApiRoute {
   private updateRoom(req: Request, res: Response) {
     try {
       var room: Room = req.body;
-    var id = req.params.room_id;
+      var id = req.params.room_id;
       var filter = { _id: new ObjectID(id) };
       Repository.updateOne('rooms', filter, room).then((room) => {
         res.json(room);
@@ -103,8 +137,8 @@ export class RoomsApiRoute {
           res.sendStatus(500);
         })
     } catch (e) {
-          res.sendStatus(BAD_REQUEST);
-     }
+      res.sendStatus(BAD_REQUEST);
+    }
 
   }
   private partiallyUpdateRoom(req: Request, res: Response) {
@@ -113,7 +147,7 @@ export class RoomsApiRoute {
   }
   private deleteRoom(req: Request, res: Response) {
     try {
-    var id = req.params.room_id;
+      var id = req.params.room_id;
       var filter = { _id: new ObjectID(id) };
       Repository.deleteOne('rooms', filter).then((result) => {
         res.json(result);
@@ -123,8 +157,8 @@ export class RoomsApiRoute {
           res.sendStatus(500);
         })
     } catch (e) {
-          res.sendStatus(BAD_REQUEST);
-     }
+      res.sendStatus(BAD_REQUEST);
+    }
   }
 }
 
