@@ -15,8 +15,10 @@ import { CorsFilterMiddleware } from './middlewares/request-headers/cors-filter.
 import { RepositoryType } from './repository/repository-types';
 import { Passport, PassportStatic } from 'passport';
 import { PassportOpenIdMiddleware } from './middlewares/security/open-id/open-id';
+import { OTAServer } from "./ota-server/ota-server";
 
 export class Server {
+    otaServer: any;
     public static bootstrap(): Server {
         return new Server();
     }
@@ -29,6 +31,8 @@ export class Server {
         this.api();
         this.moscaServer = new Mqtt().server;
         this.initializeRepository();
+        var otaConfig=ConfigManager.get('ota')
+        this.otaServer = new OTAServer(otaConfig);
     }
     public app: Express;
     public passport: Passport | any;

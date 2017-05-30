@@ -17,6 +17,9 @@ export const ProdConfig:any={
     mqtt: {
         device_base_topic: 'devices/'
     },
+     ota: {
+        data_dir: './ota-data/'
+    },
     mongodb: {
         connectionUrl: "mongodb://temi:tinbed123@ds153521.mlab.com:53521/tscsmart"
     },

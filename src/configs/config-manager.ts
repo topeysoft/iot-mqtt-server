@@ -12,4 +12,8 @@ export class ConfigManager {
                 return DevConfig;
         }
     }
+
+    static get(key){
+        return ConfigManager.getConfig()[key];
+    }
 }

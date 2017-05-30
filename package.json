@@ -11,6 +11,7 @@
     "heroku:deploy": "npm run heroku:build && cd ./deploy && git add . && git commit -am '.' && git push heroku master",
     "grunt:w": "grunt watch",
     "start": "forever start ./bin/www.js --env=production --port=3000",
+    "start:dev": "node ./bin/www.js --env=development --port=3000",
     "stop": "forever stop ./bin/www.js",
     "restart": "forever restart ./bin/www.js",
     "logs": "forever logs ./bin/www.js",
@@ -23,7 +24,7 @@
     "git:push": "git push origin master --force  && git checkout master",
     "git:publish": "npm run git:commit && npm run git:push"
   },
-  "keywords": [], 
+  "keywords": [],
   "author": "",
   "license": "ISC",
   "devDependencies": {
@@ -80,6 +81,7 @@
     "@types/pug": "^2.0.4",
     "body-parser": "^1.17.1",
     "cli-color": "^1.2.0",
+    "clor": "^5.1.0",
     "cookie-parser": "^1.4.3",
     "core-js": "^2.4.1",
     "errorhandler": "^1.5.0",

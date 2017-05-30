@@ -17,6 +17,9 @@ export const DevConfig: any = {
     mqtt: {
         device_base_topic: 'devices/'
     },
+    ota: {
+        data_dir: './ota-data/'
+    },
     mongodb: {
         connectionUrl: "mongodb://104.236.201.130:27017/mqtt"
         // connectionUrl: "mongodb://127.0.0.1:27017/mqtt"
