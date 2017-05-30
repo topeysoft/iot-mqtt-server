@@ -12,7 +12,7 @@ export class Mqtt extends EventEmitter {
 
   }
   server: mosca.Server;
- // onReceived = new EventEmitter()
+  // onReceived = new EventEmitter()
   private init() {
     var config = ConfigManager.getConfig();
     var mongoUrl = config.mongodb.connectionUrl;
@@ -31,8 +31,9 @@ export class Mqtt extends EventEmitter {
       //   url: mongoUrl
       // }
     };
-    
+
     this.server = new mosca.Server(moscaSettings);
+    this.setupSecurity();
     this.server.on('ready', setup);
 
     function setup() {
@@ -43,10 +44,10 @@ export class Mqtt extends EventEmitter {
       console.log('client connected', client.id);
     });
 
-    this.server.on('published', ( packet, client) => {
+    this.server.on('published', (packet, client) => {
       this.emit('received', packet, client);
       MqttMessageHandler.handleReceived(packet.topic, packet.payload);
-     // console.log('Published : ', `topic-${packet.topic}`,`payload-${packet.payload.toString()}`);
+      // console.log('Published : ', `topic-${packet.topic}`,`payload-${packet.payload.toString()}`);
     });
 
     this.server.on('subscribed', function (topic, client) {
@@ -64,8 +65,23 @@ export class Mqtt extends EventEmitter {
     this.server.on('clientDisconnected', (client) => {
       console.log('clientDisconnected : ', client.id);
     });
-    
+
   }
 
- 
+  setupSecurity() {
+    // this.server.authenticate = (client, username, password, callback) =>{
+       
+    //     var authorized = (username === 'alice' && password.toString() === 'secret');
+    //     if (authorized) client.user = username;
+    //     callback(null, authorized);
+    // }
+    // this.server.authenticate = () => {
+
+    // }
+    // this.server.authenticate = () => {
+
+    // }
+  }
+
+
 }
