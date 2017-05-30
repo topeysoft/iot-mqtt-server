@@ -63,7 +63,7 @@ export class DataDirValidator {
       let errors = false;
       object.firmwares.forEach(async function (firmware, index) {
         try {
-          await fs.accessAsync(`${dataDir}/ota/firmwares/${firmware.name}.bin`, fs.F_OK);
+           fs.accessAsync(`${dataDir}/ota/firmwares/${firmware.name}.bin`, fs.F_OK);
         } catch (err) {
           log.error(`Cannot find firmware ${dataDir}/ota/firmwares/${firmware.name}.bin`);
           errors = true;

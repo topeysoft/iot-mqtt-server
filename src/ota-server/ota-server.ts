@@ -4,6 +4,7 @@ import { ConfigManager } from '../configs/config-manager';
 import path = require('path');
 import express = require('express');
 import { createServer, Server } from "http";
+import { DataValidator } from "./validators/datadir";
 import * as fs from "fs";
 
 export class OTAServer {
