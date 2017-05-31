@@ -29,15 +29,15 @@ export class Server {
         this.setupHeaders();
         this.routes();
         this.api();
-        this.moscaServer = new Mqtt().server;
+        this.mqttServer = new Mqtt().server;
         this.initializeRepository();
         var otaConfig=ConfigManager.get('ota')
-        this.otaServer = new OTAServer(otaConfig);
+        this.otaServer = new OTAServer(this.app, this.mqttServer, otaConfig);
     }
     public app: Express;
     public passport: Passport | any;
 
-    public moscaServer;
+    public mqttServer;
 
 
     private config() {

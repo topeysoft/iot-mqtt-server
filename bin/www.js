@@ -32,10 +32,10 @@ var app = boot.app;
 
 
 tsclogger.init(app);
-var moscaServer = boot.moscaServer;
+var mqttServer = boot.mqttServer;
 app.set("port", httpPort);
 var httpServer = http.createServer(app);
-moscaServer.attachHttpServer(httpServer);
+mqttServer.attachHttpServer(httpServer);
 //listen on provided ports 
 httpServer.listen(httpPort);
 

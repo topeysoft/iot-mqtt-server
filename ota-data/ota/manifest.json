@@ -1,8 +1,8 @@
 {
-    "firmware": [
+    "firmwares": [
         {
-            "name": "light-switch",
-            "version":"1.0.0"
+            "name": "sonoff-relay",
+            "version":"1.0.2"
         }
     ]
 }

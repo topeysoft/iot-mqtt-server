@@ -4,6 +4,10 @@ export class SmartDevice extends BaseModel{
     @Required('Device id is required.')
     device_id: string;
     type: string;
+    fw_name: string;
+    fw_version: string;
+    fw_checksum: string;
+    online: boolean;
 }
 
 export class HomieDevice {

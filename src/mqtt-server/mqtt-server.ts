@@ -1,4 +1,4 @@
-import mosca = require('mosca');
+import * as mosca from 'mosca';
 import { EventEmitter } from "events";
 import { OnMqttConnectHandler } from './handlers/mqtt-connect-handler';
 import { MqttMessageHandler } from './handlers/mqtt-message-handler';
@@ -68,9 +68,21 @@ export class Mqtt extends EventEmitter {
 
   }
 
+  publishMessage(message:{
+      topic: string,
+      payload: string|Buffer, 
+      qos: 0|1|2, // 0, 1, or 2
+      retain: boolean 
+    }) {
+
+    this.server.publish(message,  ()=> {
+      console.log('done!');
+    });
+  }
+
   setupSecurity() {
     // this.server.authenticate = (client, username, password, callback) =>{
-       
+
     //     var authorized = (username === 'alice' && password.toString() === 'secret');
     //     if (authorized) client.user = username;
     //     callback(null, authorized);
