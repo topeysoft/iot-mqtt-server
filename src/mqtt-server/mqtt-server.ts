@@ -5,14 +5,16 @@ import { MqttMessageHandler } from './handlers/mqtt-message-handler';
 import { ConfigManager } from '../configs/config-manager';
 // import http = require('http');
 
-export class Mqtt extends EventEmitter {
+export class MqttServer extends EventEmitter {
   constructor() {
     super();
     this.init();
 
   }
-  server: mosca.Server;
-  // onReceived = new EventEmitter()
+  private moscaServer: mosca.Server;
+  public attachHttpServer(httpServer) {
+    this.moscaServer.attachHttpServer(httpServer);
+  }
   private init() {
     var config = ConfigManager.getConfig();
     var mongoUrl = config.mongodb.connectionUrl;
@@ -32,52 +34,55 @@ export class Mqtt extends EventEmitter {
       // }
     };
 
-    this.server = new mosca.Server(moscaSettings);
+    this.moscaServer = new mosca.Server(moscaSettings);
     this.setupSecurity();
-    this.server.on('ready', setup);
+    this.moscaServer.on('ready', () => { this.setup() });
 
-    function setup() {
-      console.log('Mosca server is up and running')
-    }
 
-    this.server.on('clientConnected', function (client) {
+    this.moscaServer.on('clientConnected', (client) => {
       console.log('client connected', client.id);
     });
 
-    this.server.on('published', (packet, client) => {
+    this.moscaServer.on('published', (packet, client) => {
       this.emit('received', packet, client);
       MqttMessageHandler.handleReceived(packet.topic, packet.payload);
       // console.log('Published : ', `topic-${packet.topic}`,`payload-${packet.payload.toString()}`);
     });
 
-    this.server.on('subscribed', function (topic, client) {
+    this.moscaServer.on('subscribed', function (topic, client) {
       console.log('subscribed : ', topic);
     });
 
-    this.server.on('unsubscribed', (topic, client) => {
+    this.moscaServer.on('unsubscribed', (topic, client) => {
       console.log('unsubscribed : ', topic);
     });
 
-    this.server.on('clientDisconnecting', (client) => {
+    this.moscaServer.on('clientDisconnecting', (client) => {
       console.log('clientDisconnecting : ', client.id);
     });
 
-    this.server.on('clientDisconnected', (client) => {
+    this.moscaServer.on('clientDisconnected', (client) => {
       console.log('clientDisconnected : ', client.id);
     });
 
   }
 
-  publishMessage(message:{
-      topic: string,
-      payload: string|Buffer, 
-      qos: 0|1|2, // 0, 1, or 2
-      retain: boolean 
-    }) {
+  setup() {
+    console.log('Mosca server is up and running');
+    this.emit('ready')
+  }
 
-    this.server.publish(message,  ()=> {
-      console.log('done!');
+  publishMessage(message: {
+    topic: string,
+    payload: string | Buffer,
+    qos: 0 | 1 | 2, // 0, 1, or 2
+    retain: boolean
+  }) {
+
+    this.moscaServer.publish(message, () => {
     });
+
+
   }
 
   setupSecurity() {

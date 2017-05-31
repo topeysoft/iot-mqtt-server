@@ -6,7 +6,7 @@ import * as express from 'express';
 import errorHandler = require("errorhandler");
 import methodOverride = require("method-override");
 import { IndexRoute } from "./routes/index";
-import { Mqtt } from './mqtt-server/mqtt-server';
+import { MqttServer } from './mqtt-server/mqtt-server';
 import { Repository } from './repository/repository';
 import { Response, NextFunction, Router, Express } from 'express';
 import { ApiRoutes } from './routes/api-routes/api-routes';
@@ -29,7 +29,7 @@ export class Server {
         this.setupHeaders();
         this.routes();
         this.api();
-        this.mqttServer = new Mqtt().server;
+        this.mqttServer = new MqttServer();;
         this.initializeRepository();
         var otaConfig=ConfigManager.get('ota')
         this.otaServer = new OTAServer(this.app, this.mqttServer, otaConfig);

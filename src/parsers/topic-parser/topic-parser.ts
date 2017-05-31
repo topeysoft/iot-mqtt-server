@@ -7,6 +7,7 @@ export class TopicParser {
 
     private static  patterns = {
         devices_fw: 'devices/+deviceId/+fw/+property'
+        , device_ota_status_report: 'devices/+deviceId/+implementation/+ota/+otaStatus'
         ,devices_stats: 'devices/+deviceId/+stats/+property'
         , devices_properties: 'devices/+deviceId/+property'
         , devices_sub_properties: 'devices/+deviceId/+property/+subProperty'
@@ -23,6 +24,9 @@ export class TopicParser {
     }
     static parseDeviceFwTopic(topic: string):IDeviceTopicParams {
         return this.execute(topic, this.patterns.devices_fw);
+    }
+    static parseDeviceOtaStatusTopic(topic: string):IDeviceTopicParams {
+        return this.execute(topic, this.patterns.device_ota_status_report);
     }
     static parseDeviceStatTopic(topic: string):IDeviceTopicParams {
         return this.execute(topic, this.patterns.devices_stats);
@@ -49,6 +53,10 @@ export class TopicParser {
   static   isDeviceFwTopic(topic: string) {
       var result = this.parseDeviceFwTopic(topic);
         return (result.fw==='$fw');
+    }
+  static   isDeviceOtaStatusTopic(topic: string) {
+      var result = this.parseDeviceFwTopic(topic);
+        return (result.implementation==='$implementation' && result.ota==='ota' && result.otaStatus==='status');
     }
   static   isDeviceStatTopic(topic: string) {
       var result = this.parseDeviceStatTopic(topic);
@@ -86,9 +94,12 @@ export class TopicParser {
 } 
 
  export interface IDeviceTopicParams {
-     deviceId:string,
-     nodeId:string,
-     stats:string,
+     deviceId:string;
+     nodeId:string;
+     stats:string;
+     implementation:string;
+     otaStatus:string;
+     ota:string;
      subProperty:string;
      property:string;
      fw:string;

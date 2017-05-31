@@ -2,7 +2,8 @@
     "firmwares": [
         {
             "name": "sonoff-relay",
-            "version":"1.0.2"
+            "version":"1.0.2",
+            "checksum":"2b2b28beda28169732678f96128e6d87"
         }
     ]
 }

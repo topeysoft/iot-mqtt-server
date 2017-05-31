@@ -1,24 +1,31 @@
 export const Schemas = {
   manifest: {
-    required: true,
-    type: 'object',
-    additionalProperties: false,
+    // $schema: "http://json-schema.org/draft-04/schema#",
+    id: "http://topeysoft.com/schemas/homie_ota_manifest.json#",
+    title: "OTA manifest",
+    description: "OTA manifest for Homie-ESP-8266 firmwares",
+    type: "object",
+    required: ["firmwares"],
     properties: {
       firmwares: {
-        // required: true,
-        // type: 'array',
+        title: "Firmwares",
+        description: "Array of firmware",
+        type: 'array',
         items: {
           type: 'object',
-          additionalProperties: false,
+          description: "firmware item",
+          required: ["name", "version", "checksum"],
           properties: {
             name: {
-              required: true,
               type: 'string'
             },
             version: {
-              required: true,
               type: 'string'
             },
+            checksum: {
+              type: 'string'
+            },
+            
             // devices: {
             //   required: false,
             //   type: 'array',

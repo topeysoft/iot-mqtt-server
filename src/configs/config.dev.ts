@@ -23,6 +23,7 @@ export const DevConfig: any = {
     mongodb: {
         // connectionUrl: "mongodb://104.236.201.130:27017/mqtt"
         connectionUrl: "mongodb://127.0.0.1:27017/mqtt"
+        // connectionUrl: "mongodb://temi:tinbed123@ds153521.mlab.com:53521/tscsmart"
     },
     tingodb: {
         dbpath: "/database"

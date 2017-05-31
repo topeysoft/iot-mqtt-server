@@ -4,13 +4,17 @@ import { Schemas } from './schemas';
 export class Validator {
     private static validators = {};
     static ValidateData(schemaName: string, data: any): any {
-        var result :any= { valid: false }
+        let result :any= { valid: false }
+        let schema =Schemas[schemaName];
         try {
             if (!Validator.validators[schemaName]) {
-                var ajv = new Ajv(); // options can be passed, e.g. {allErrors: true}
-                Validator.validators[schemaName] = ajv.compile(Schemas[schemaName]);
+                let options:Ajv.Options = {};
+                options.allErrors=true;
+                let ajv = new Ajv(options);
+                let v= ajv.compile(schema);
+                Validator.validators[schemaName]=v;
             }
-           var valid = Validator.validators[schemaName](data);
+        let valid = Validator.validators[schemaName](data);
            result= { valid: valid, errors: Validator.validators[schemaName].errors }
         } catch (error) {
             console.log(error);

@@ -1,14 +1,19 @@
-import { Mqtt } from '../mqtt-server';
+import { MqttServer } from '../mqtt-server';
 import { TopicParser } from '../../parsers/topic-parser/topic-parser';
 import { Repository } from '../../repository/repository';
 import { SmartDevice, HomieNode, HomieNodeCapability } from '../../models/smart-devices';
 import { NodePropertyParser } from '../../parsers/node-property-parser/node-property-parser';
+import { EventEmitter } from "events";
+
 export class MqttMessageHandler {
+    static events:EventEmitter= new EventEmitter();
     static handleReceived(topic: string, message: Buffer) {
+         MqttMessageHandler.events.emit('device:ready_for_firmware', message);
         if (TopicParser.isDeviceFwTopic(topic)) {
             MqttMessageHandler.handleDeviceFwTopic(topic, message);
-        }
-        if (TopicParser.isDeviceStatTopic(topic)) {
+        } else if (TopicParser.isDeviceOtaStatusTopic(topic)) {
+            //; MqttMessageHandler.handleDeviceStatsTopic(topic, message);
+        } else if (TopicParser.isDeviceStatTopic(topic)) {
             MqttMessageHandler.handleDeviceStatsTopic(topic, message);
         }
         else if (TopicParser.isDevicePropertyTopic(topic)) {
@@ -36,12 +41,6 @@ export class MqttMessageHandler {
         device[cleanupNameForStorage(statParam.property)] = message.toString();
         Repository.updateOne('devices', { device_id: device.device_id }, device).then(result => {
             console.info('DEVICE UPDATED: ', device);
-            // DeviceRepository.getByDeviceId(device.device_id).then(deviceResult => {
-            //     console.info('UPDATED DEVICE: ', deviceResult);
-            // })
-            //     .catch(error => {
-            //         console.info('UNABLE TO FETCH DEVICE: ', error);
-            //     });
         });
     }
     static handleDeviceFwTopic(topic: string, message: Buffer) {
@@ -61,6 +60,29 @@ export class MqttMessageHandler {
         Repository.updateOne('devices', { device_id: device.device_id }, device, { upsert: true }, true, [index]).then(result => {
             console.info('DEVICE UPDATED: ', device, result.result);
         });
+    }
+    static handleDeviceOtaStatusTopic(topic: string, message: Buffer) {
+        let param = TopicParser.parseDeviceOtaStatusTopic(topic);
+        let status = message.toString();
+        console.info('OTA STATUS MESSAGE RECIEVED: ', param, message.toString());
+        let MMH = MqttMessageHandler;
+        if (+param.otaStatus===202){
+            MMH.events.emit('device:ready_for_firmware', param);
+        }
+        //var device: SmartDevice = new SmartDevice();
+        // device.device_id = param.deviceId;
+        // device['fw_' + cleanupNameForStorage(param.property)] = message.toString();
+
+        // var index = {
+        //     key: {
+        //         device_id: 1
+        //     },
+        //     name: "device_id",
+        //     unique: true
+        // };
+        // Repository.updateOne('devices', { device_id: device.device_id }, device, { upsert: true }, true, [index]).then(result => {
+        //     console.info('DEVICE UPDATED: ', device, result.result);
+        // });
     }
     static handleDevicePropertiesTopic(topic: string, message: Buffer) {
         var propertyParam = TopicParser.parseDevicePropertyTopic(topic);
@@ -107,10 +129,10 @@ export class MqttMessageHandler {
         console.info('DEVICE NODE STATE MESSAGE RECIEVED: ', topic, message.toString());
         var propertyParam = TopicParser.parseNodeStateTopic(topic);
         Repository.getOne<HomieNode>('nodes', { $and: [{ device_id: propertyParam.deviceId }, { node_id: propertyParam.nodeId }] }).then(node => {
-            
-            if(!node){
-                node=new HomieNode();
-                node.node_id=propertyParam.nodeId;
+
+            if (!node) {
+                node = new HomieNode();
+                node.node_id = propertyParam.nodeId;
                 node.device_id = propertyParam.deviceId;
                 return;
             }

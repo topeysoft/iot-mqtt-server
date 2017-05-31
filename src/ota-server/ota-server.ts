@@ -2,6 +2,7 @@ import mosca = require('mosca');
 import { EventEmitter } from "events";
 import { ConfigManager } from '../configs/config-manager';
 import path = require('path');
+import { Request, Express } from 'express';
 import express = require('express');
 import { createServer, Server } from "http";
 import * as fs from "fs";
@@ -9,29 +10,33 @@ import * as md5 from "md5";
 import { OTAManifest } from './model/manifest';
 import { Validator } from './validators/validator';
 import { R_OK, W_OK } from "constants";
-import { Mqtt } from '../mqtt-server/mqtt-server';
+import { MqttServer } from '../mqtt-server/mqtt-server';
 import { Repository } from '../repository/repository';
 import { SmartDevice } from '../models/smart-devices';
+import { MqttMessageHandler } from "../mqtt-server/handlers/mqtt-message-handler";
 
 export class OTAServer {
   manifest: any;
-  server: Server;
+  server: OTAServer;
   app: any;
   manifestPath: any;
   dataDir: any;
-  private mqttServer: Mqtt;
+  private mqttServer: MqttServer;
   constructor(app, mqttServer, options) {
-    this.dataDir = options.data_dir;
-    this.mqttServer=mqttServer;
-    this.app=app;
+    this.dataDir = path.resolve(options.data_dir);
+    this.mqttServer = mqttServer;
+    this.app = app;
     this.app.use('/ota', this._httpHandler);
-    this.manifestPath = path.resolve(path.join(this.dataDir, '/ota/manifest.json'));
+    this.manifestPath = path.join(this.dataDir, '/ota/manifest.json');
     // if (!options.app) {
     //   this.app = express();
     //   this.server = createServer(this.app);
     //   this.app.use('/ota', this._httpHandler);
     // }
-    this.setup();
+    this.mqttServer.on('ready', () => {
+      this.setup();
+      this.utilizeManifest();
+    });
     // let watcher = chokidar.watch(this.manifestPath);
     // pauseable.pause(watcher); // Buffer events until dispatcher is ready
     // dispatcher.on('ready', () => {
@@ -73,13 +78,17 @@ export class OTAServer {
       console.info('OTA manifest updated');
       this.utilizeManifest();
     });
+
+    MqttMessageHandler.events.on('device:ready_for_firmware', (params) => {
+      console.log("DEVICE IS LISTENING", params);
+    });
   }
 
   utilizeManifest() {
     this.fetchManifest().then((data) => {
-      this.manifest=data;
+      this.manifest = data;
       this._warnDevices();
-    }).catch(err=>{
+    }).catch(err => {
       console.log('Unable to get manifest:', err);
     })
 
@@ -92,11 +101,11 @@ export class OTAServer {
             reject(err);
           } else {
             let manifest: OTAManifest = JSON.parse(data);
-           let validationResult = Validator.ValidateData('manifest', manifest);
-            // if (!validationResult.valid) {
-            //   console.log(validationResult)
-            //   return reject('invalid manifest data');
-            // }
+            let validationResult = Validator.ValidateData('manifest', manifest);
+            if (!validationResult.valid) {
+              console.log(validationResult)
+              return reject('invalid manifest data');
+            }
             return resolve(manifest);
           }
         });
@@ -141,7 +150,7 @@ export class OTAServer {
     return firmware.version !== version;
   }
 
-  async _httpHandler(req, res) {
+  async _httpHandler(req: Request, res) {
     if (req.get('User-Agent') !== 'ESP8266-http-Update' || !req.get('x-ESP8266-free-space') || !req.get('x-ESP8266-version')) {
       return res.sendStatus(403);
     }
@@ -179,16 +188,14 @@ export class OTAServer {
   }
 
   _warnDevices() {
-    Repository.getMany<SmartDevice>('devices', {skip:0, limit:1000, query:{}}).then(((devices) => {
-          console.log('devices',devices);
+    Repository.getMany<SmartDevice>('devices', { skip: 0, limit: 1000, query: {} }).then(((devices) => {
       if (devices && devices.length > 0) {
         this.manifest.firmwares.forEach((firmware) => {
-          console.log('firmware',firmware);
           devices.forEach((device) => {
             if (device.fw_name === firmware.name) {
               this.mqttServer.publishMessage({
-                topic: `devices/${device.device_id}/$ota`,
-                payload: firmware.version.toString(),
+                topic: `devices/${device.device_id}/$implementation/ota/checksum`,
+                payload: firmware.checksum.toString(),
                 qos: 2,
                 retain: true
               });
@@ -196,7 +203,9 @@ export class OTAServer {
           });
         });
       }
-    }));
+    })).catch(err => {
+      console.log('Unable to fetch devices', err);
+    });
 
   }
 
