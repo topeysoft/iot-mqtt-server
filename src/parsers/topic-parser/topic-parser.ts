@@ -55,7 +55,7 @@ export class TopicParser {
         return (result.fw==='$fw');
     }
   static   isDeviceOtaStatusTopic(topic: string) {
-      var result = this.parseDeviceFwTopic(topic);
+      var result = this.parseDeviceOtaStatusTopic(topic);
         return (result.implementation==='$implementation' && result.ota==='ota' && result.otaStatus==='status');
     }
   static   isDeviceStatTopic(topic: string) {

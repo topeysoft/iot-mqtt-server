@@ -6,13 +6,12 @@ import { NodePropertyParser } from '../../parsers/node-property-parser/node-prop
 import { EventEmitter } from "events";
 
 export class MqttMessageHandler {
-    static events:EventEmitter= new EventEmitter();
+    static events: EventEmitter = new EventEmitter();
     static handleReceived(topic: string, message: Buffer) {
-         MqttMessageHandler.events.emit('device:ready_for_firmware', message);
         if (TopicParser.isDeviceFwTopic(topic)) {
             MqttMessageHandler.handleDeviceFwTopic(topic, message);
         } else if (TopicParser.isDeviceOtaStatusTopic(topic)) {
-            //; MqttMessageHandler.handleDeviceStatsTopic(topic, message);
+            MqttMessageHandler.handleDeviceOtaStatusTopic(topic, message);
         } else if (TopicParser.isDeviceStatTopic(topic)) {
             MqttMessageHandler.handleDeviceStatsTopic(topic, message);
         }
@@ -64,9 +63,10 @@ export class MqttMessageHandler {
     static handleDeviceOtaStatusTopic(topic: string, message: Buffer) {
         let param = TopicParser.parseDeviceOtaStatusTopic(topic);
         let status = message.toString();
-        console.info('OTA STATUS MESSAGE RECIEVED: ', param, message.toString());
+        console.info('OTA STATUS MESSAGE RECIEVED: ', param, status);
         let MMH = MqttMessageHandler;
-        if (+param.otaStatus===202){
+        if (+status === 202) {
+            console.info('DEVICE OTA STATUS IS 202|READY');
             MMH.events.emit('device:ready_for_firmware', param);
         }
         //var device: SmartDevice = new SmartDevice();

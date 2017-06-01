@@ -14,6 +14,7 @@ import { MqttServer } from '../mqtt-server/mqtt-server';
 import { Repository } from '../repository/repository';
 import { SmartDevice } from '../models/smart-devices';
 import { MqttMessageHandler } from "../mqtt-server/handlers/mqtt-message-handler";
+import { OTAFirmware } from './model/firmware';
 
 export class OTAServer {
   manifest: any;
@@ -80,6 +81,7 @@ export class OTAServer {
     });
 
     MqttMessageHandler.events.on('device:ready_for_firmware', (params) => {
+      this.publishFirware(params.deviceId);
       console.log("DEVICE IS LISTENING", params);
     });
   }
@@ -87,7 +89,7 @@ export class OTAServer {
   utilizeManifest() {
     this.fetchManifest().then((data) => {
       this.manifest = data;
-      this._warnDevices();
+      this._notifyDevicesOfFirmwareChecksums();
     }).catch(err => {
       console.log('Unable to get manifest:', err);
     })
@@ -115,11 +117,34 @@ export class OTAServer {
     })
   }
 
-  checkAllDeviceFirmware() {
 
-  }
 
-  publishFirwareChecksums() {
+  publishFirware(deviceId) {
+    if (!deviceId) return;
+    Repository.getOne('devices', { device_id: deviceId }).then((device: SmartDevice) => {
+      let firmware = this.manifest.firmwares.find((m:OTAFirmware) => {
+        return m.name===device.fw_name;
+      });
+      let firmwarePath = `${this.dataDir}/ota/firmwares/${firmware.name}.bin`;
+      let firmwareBuffer;
+      try {
+        firmwareBuffer = fs.readFileSync(firmwarePath);
+      } catch (err) {
+        console.error(`OTA aborted, cannot access firmware ${firmwarePath}`, { deviceId: deviceId });
+        return ;
+      }
+      let firmwareMd5 = md5(firmwareBuffer);
+      this.mqttServer.publishMessage({
+        topic:`devices/${device.device_id}/$implementation/ota/firmware`,
+        payload:firmwareBuffer,
+        qos:0,
+        retain:false
+      })
+      console.info('OTA update started', { deviceId: deviceId, version: firmware.version, checksum:firmwareMd5 });
+    })
+      .catch(err => {
+        console.log(`Device ${deviceId} not found`, err);
+      });
 
   }
 
@@ -187,7 +212,7 @@ export class OTAServer {
     return res.sendFile(path.resolve(firmwarePath)); // path resolve else with relative path express might cry
   }
 
-  _warnDevices() {
+  private _notifyDevicesOfFirmwareChecksums() {
     Repository.getMany<SmartDevice>('devices', { skip: 0, limit: 1000, query: {} }).then(((devices) => {
       if (devices && devices.length > 0) {
         this.manifest.firmwares.forEach((firmware) => {
