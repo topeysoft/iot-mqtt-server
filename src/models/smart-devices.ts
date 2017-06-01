@@ -34,8 +34,8 @@ export class HomieNode {
     device_id: string;
     capabilities: HomieNodeCapability[] = [];
     type: string = '';
-
-
+    display_name:string;
+    description:string;
 }
 export class HomieNodeCapability {
     identifier;

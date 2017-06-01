@@ -78,6 +78,7 @@ export class RoomsApiRoute {
       if (rooms && rooms.length > 0) {
         Repository.getMany<HomieNode>('nodes', {}).then((nodes) => {
           if (nodes && nodes.length > 0) {
+
             rooms.map((room: Room) => {
               if (room.control_ids) {
                 room.controls = nodes.filter((node) => {
@@ -98,6 +99,15 @@ export class RoomsApiRoute {
         console.log(err);
         res.sendStatus(500);
       });
+  }
+
+  fixNodeProperties(nodes:HomieNode[]){
+                nodes = nodes || [];
+                nodes.map(node => {
+                    node.display_name = this.deviceMgmtSvc.getNodeIcon(node);
+                    node.description = this.deviceMgmtSvc.getDescription(node);
+                    return node;
+                })
   }
   private getOneRoom(req: Request, res: Response) {
     var id = req.params.room_id;
