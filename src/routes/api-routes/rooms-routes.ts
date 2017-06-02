@@ -5,6 +5,7 @@ import { Room } from '../../models/room';
 import { BAD_REQUEST, INTERNAL_SERVER_ERROR } from "http-status-codes";
 import { RepoQueryParams } from '../../repository/repo-query-params';
 import { HomieNode } from '../../models/smart-devices';
+import { NodePropertyMapper } from '../../mappers/node-property-mapper';
 export class RoomsApiRoute {
 
   private basePath: string = '/rooms';
@@ -78,7 +79,7 @@ export class RoomsApiRoute {
       if (rooms && rooms.length > 0) {
         Repository.getMany<HomieNode>('nodes', {}).then((nodes) => {
           if (nodes && nodes.length > 0) {
-
+            NodePropertyMapper.fixNodeProperties(nodes);
             rooms.map((room: Room) => {
               if (room.control_ids) {
                 room.controls = nodes.filter((node) => {
@@ -101,15 +102,7 @@ export class RoomsApiRoute {
       });
   }
 
-  fixNodeProperties(nodes:HomieNode[]){
-                nodes = nodes || [];
-                nodes.map(node => {
-                    node.display_name = this.deviceMgmtSvc.getNodeIcon(node);
-                    node.description = this.deviceMgmtSvc.getDescription(node);
-                    return node;
-                })
-  }
-  private getOneRoom(req: Request, res: Response) {
+    private getOneRoom(req: Request, res: Response) {
     var id = req.params.room_id;
     try {
       var filter = { _id: new ObjectID(id) };

@@ -25,13 +25,23 @@ const NodeTypeMap = {
     '': 'Generic'
 }
 export class NodePropertyMapper{
-    getDisplayName(node:HomieNode) {
+   static getDisplayName(node:HomieNode) {
         return node.display_name ||  this.getDisplayType(node);
     }
-    getDisplayType(node:HomieNode) {
+   static getDisplayType(node:HomieNode) {
         return NodeTypeMap[node.type] || NodeTypeMap['default'];
     }
-    getDescription(node:HomieNode) {
+   static getDescription(node:HomieNode) {
         return node.description || this.getDisplayType(node);
     }
+
+    static fixNodeProperties(nodes:HomieNode[]){
+                nodes = nodes || [];
+                nodes.map(node => {
+                    node.display_name = NodePropertyMapper.getDisplayName(node);
+                    node.description = NodePropertyMapper.getDescription(node);
+                    return node;
+                })
+  }
+
 }

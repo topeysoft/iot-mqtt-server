@@ -4,6 +4,7 @@ import { ObjectID } from 'mongodb';
 import { HomieNode } from '../../models/smart-devices';
 import { BAD_REQUEST, INTERNAL_SERVER_ERROR } from "http-status-codes";
 import { RepoQueryParams } from '../../repository/repo-query-params';
+import { NodePropertyMapper } from '../../mappers/node-property-mapper';
 export class NodesApiRoute {
 
   private basePath: string = '/nodes';
@@ -50,14 +51,15 @@ export class NodesApiRoute {
     queryParams.skip = +queryParams.skip || 0;
     queryParams.limit = +queryParams.limit || 1000;
     queryParams.fields = {};
-    fields.split(',').concat(fields.split('|')).filter(s=>{
-      return (s && s.trim().length>0)
+    fields.split(',').concat(fields.split('|')).filter(s => {
+      return (s && s.trim().length > 0)
     })
-    .forEach(f => {
-      queryParams.fields[f] = 1;
-    });
+      .forEach(f => {
+        queryParams.fields[f] = 1;
+      });
     console.log(queryParams);
-    Repository.getMany('nodes', queryParams).then((nodes) => {
+    Repository.getMany('nodes', queryParams).then((nodes:HomieNode[]) => {
+      NodePropertyMapper.fixNodeProperties(nodes);
       res.json(nodes);
     })
       .catch((err) => {
@@ -93,7 +95,7 @@ export class NodesApiRoute {
   private updateNode(req: Request, res: Response) {
     try {
       var node: HomieNode = req.body;
-    var id = req.params.node_id;
+      var id = req.params.node_id;
       var filter = { _id: new ObjectID(id) };
       Repository.updateOne('nodes', filter, node).then((node) => {
         res.json(node);
@@ -103,8 +105,8 @@ export class NodesApiRoute {
           res.sendStatus(500);
         })
     } catch (e) {
-          res.sendStatus(BAD_REQUEST);
-     }
+      res.sendStatus(BAD_REQUEST);
+    }
 
   }
   private partiallyUpdateNode(req: Request, res: Response) {
@@ -112,7 +114,7 @@ export class NodesApiRoute {
   }
   private deleteNode(req: Request, res: Response) {
     try {
-    var id = req.params.node_id;
+      var id = req.params.node_id;
       var filter = { _id: new ObjectID(id) };
       Repository.deleteOne('nodes', filter).then((result) => {
         res.json(result);
@@ -122,8 +124,8 @@ export class NodesApiRoute {
           res.sendStatus(500);
         })
     } catch (e) {
-          res.sendStatus(BAD_REQUEST);
-     }
+      res.sendStatus(BAD_REQUEST);
+    }
   }
 }
 
