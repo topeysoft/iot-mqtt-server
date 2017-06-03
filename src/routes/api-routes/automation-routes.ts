@@ -72,26 +72,27 @@ export class AutomationsApiRoute {
 
     // ]
     console.log(queryParams);
-    Repository.getMany('automation', queryParams).then((rooms) => {
+    Repository.getMany('automations', queryParams).then((automations) => {
       var done = () => {
-        res.json(rooms);
+        res.json(automations);
       }
-      if (rooms && rooms.length > 0) {
-        Repository.getMany<HomieNode>('nodes', {}).then((nodes) => {
-          if (nodes && nodes.length > 0) {
-            NodePropertyMapper.fixNodeProperties(nodes);
-            rooms.map((room: Automation) => {
-              if (room.control_ids) {
-                room.controls = nodes.filter((node) => {
-                  return room.control_ids.indexOf(node._id.toString()) !== -1;
-                })
-              }
-            });
-            done();
-          } else {
-            done();
-          }
-        });
+      if (automations && automations.length > 0) {
+        // Repository.getMany<HomieNode>('nodes', {}).then((nodes) => {
+        //   if (nodes && nodes.length > 0) {
+        //     NodePropertyMapper.fixNodeProperties(nodes);
+        //     automations.map((room: Automation) => {
+        //       if (room.control_ids) {
+        //         room.controls = nodes.filter((node) => {
+        //           return room.control_ids.indexOf(node._id.toString()) !== -1;
+        //         })
+        //       }
+        //     });
+        //     done();
+        //   } else {
+        //     done();
+        //   }
+        // });
+        done();
       } else {
         done();
       }
