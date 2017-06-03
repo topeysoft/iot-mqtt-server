@@ -6,7 +6,7 @@ export class NodePropertyParser {
     rangePropMinPattern = /([a-z_\-]{1,}:[a-z]*)/g;
     minPropPattern = /\d+(?=-\d+\])/g;
     maxPropPattern = /\d+(?=\])/g;
-    rangePropIdentifier = /[a-zA-Z](?=\[)/g;
+    rangePropIdentifier = /[a-zA-Z]+(?=\[)/g;
     valuePropIdentifier = /[a-zA-Z_-]+(?=:[a-zA-Z])/g;
     settablePattern = /:(.*?)[a-zA-Z]+/g;
 

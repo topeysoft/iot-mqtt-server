@@ -17,7 +17,8 @@ const NodeTypeMap = {
     'wall-outlet': 'Power outlet',
     'power-outlet': 'Power outlet',
 
-    'temprature': 'Temprature',
+    'temperature': 'Temperature',
+    'thermostat': 'Thermostat',
     'thermometer': 'Thermometer',
     'default': 'Generic',
     'undefined': 'Generic',
