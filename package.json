@@ -14,7 +14,7 @@
     "start:dev": "node ./bin/www.js --env=development --port=3000",
     "stop": "forever stop ./bin/www.js",
     "restart": "forever restart -l forever.log -o out.log -e err.log ./bin/www.js",
-    "logs": "forever logs ./bin/www.js",
+    "logs": "tail -f /root/.forever/mnyn.log",
     "test": "mocha --opts mocha.opts && rm -rf test",
     "test:w": "mocha --opts mocha.opts --watch",
     "build": "grunt build",
