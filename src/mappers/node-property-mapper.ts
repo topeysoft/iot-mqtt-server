@@ -11,6 +11,7 @@ const NodeTypeMap = {
     'led-light-bulb': 'LED light bulb',
     'rgb-led-light': 'Multi-color LED light',
     'rgbw-led': 'Multi-color (+ white) LED light',
+    'rgbw-light': 'Multi-color (+ white) LED light',
     'rgbw-led-light': 'Multi-color (+ white) LED light',
 
     'outlet': 'Power outlet',
