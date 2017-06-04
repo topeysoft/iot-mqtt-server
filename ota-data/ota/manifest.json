@@ -4,6 +4,11 @@
             "name": "sonoff-relay",
             "version":"1.0.4",
             "checksum":"3DF3A4EFAB61132CF19C7E95E66138E6"
+        },
+        {
+            "name": "connex-rgbw",
+            "version":"1.0.2",
+            "checksum":"C8FEF86E6BB2FF95EEFC0A006BC3EDAA"
         }
     ]
 }
