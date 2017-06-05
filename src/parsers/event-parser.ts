@@ -15,7 +15,6 @@ export class TopicParser {
         , device_node_capabilities: 'devices/+deviceId/+nodeId/+property'
         , device_node_states: 'devices/+deviceId/+nodeId/+property'
         , device_node_states_setters: 'devices/+deviceId/+nodeId/+property/+set'
-
         , others: 'devices/+deviceId/#path'
     }
     
