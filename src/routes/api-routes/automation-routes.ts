@@ -1,12 +1,14 @@
 import { NextFunction, Request, Response, Router } from 'express';
 import { Repository } from '../../repository/repository';
 import { ObjectID } from 'mongodb';
-import { Automation } from '../../models/automation';
+import { Automation } from '../../models/automation/automation';
 import { BAD_REQUEST, INTERNAL_SERVER_ERROR } from "http-status-codes";
 import { RepoQueryParams } from '../../repository/repo-query-params';
 import { HomieNode } from '../../models/smart-devices';
 import { NodePropertyMapper } from '../../mappers/node-property-mapper';
 export class AutomationsApiRoute {
+
+// TODO:: Validate automation payload and strip out unessesary properties
 
   private basePath: string = '/automations';
   constructor(private router: Router) {
@@ -58,40 +60,28 @@ export class AutomationsApiRoute {
       .forEach(f => {
         queryParams.fields[f] = 1;
       });
-    // var query = [
-    //   { $unwind: "$control_ids" },
-    //   {
-    //     $lookup: {
-    //       from: "nodes",
-    //       localField: 'control_ids',
-    //       foreignField: '_id.str()',
-    //       as: "controls"
-    //     }
-
-    //   },
-
-    // ]
-    console.log(queryParams);
     Repository.getMany('automations', queryParams).then((automations) => {
       var done = () => {
         res.json(automations);
       }
       if (automations && automations.length > 0) {
-        // Repository.getMany<HomieNode>('nodes', {}).then((nodes) => {
-        //   if (nodes && nodes.length > 0) {
-        //     NodePropertyMapper.fixNodeProperties(nodes);
-        //     automations.map((room: Automation) => {
-        //       if (room.control_ids) {
-        //         room.controls = nodes.filter((node) => {
-        //           return room.control_ids.indexOf(node._id.toString()) !== -1;
-        //         })
-        //       }
-        //     });
-        //     done();
-        //   } else {
-        //     done();
-        //   }
-        // });
+        Repository.getMany<HomieNode>('nodes', {}).then((nodes) => {
+          if (nodes && nodes.length > 0) {
+            NodePropertyMapper.fixNodeProperties(nodes);
+            automations.forEach((automation: Automation) => {
+              if (automation.effects) {
+                automation.effects.map((effect) => {
+                  effect.node = nodes.find(node => {
+                    return node.node_id === effect.node_id && node.device_id === effect.device_id;
+                  });
+                })
+              }
+            });
+            done();
+          } else {
+            done();
+          }
+        });
         done();
       } else {
         done();
@@ -103,12 +93,12 @@ export class AutomationsApiRoute {
       });
   }
 
-    private getOneAutomation(req: Request, res: Response) {
+  private getOneAutomation(req: Request, res: Response) {
     var id = req.params.automation_id;
     try {
       var filter = { _id: new ObjectID(id) };
-      Repository.getOne('automation', filter).then((room) => {
-        res.json(room);
+      Repository.getOne('automations', filter).then((automation) => {
+        res.json(automation);
       })
         .catch((err) => {
           console.log(err);
@@ -119,9 +109,9 @@ export class AutomationsApiRoute {
     }
   }
   private createAutomation(req: Request, res: Response) {
-    var room: Automation = req.body;
-    Repository.insertOne('automation', room).then((room) => {
-      res.json(room);
+    var automation: Automation = req.body;
+    Repository.insertOne('automations', automation).then((automation) => {
+      res.json(automation);
     })
       .catch((err) => {
         console.log(err);
@@ -130,11 +120,11 @@ export class AutomationsApiRoute {
   }
   private updateAutomation(req: Request, res: Response) {
     try {
-      var room: Automation = req.body;
+      var automation: Automation = req.body;
       var id = req.params.automation_id;
       var filter = { _id: new ObjectID(id) };
-      Repository.updateOne('automation', filter, room).then((room) => {
-        res.json(room);
+      Repository.updateOne('automations', filter, automation).then((automation) => {
+        res.json(automation);
       })
         .catch((err) => {
           console.log(err);
@@ -146,14 +136,14 @@ export class AutomationsApiRoute {
 
   }
   private partiallyUpdateAutomation(req: Request, res: Response) {
-    var device: Automation = req.body;
+    var automation: Automation = req.body;
     return this.updateAutomation(req, res);
   }
   private deleteAutomation(req: Request, res: Response) {
     try {
       var id = req.params.automation_id;
       var filter = { _id: new ObjectID(id) };
-      Repository.deleteOne('automation', filter).then((result) => {
+      Repository.deleteOne('automations', filter).then((result) => {
         res.json(result);
       })
         .catch((err) => {

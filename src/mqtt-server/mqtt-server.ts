@@ -1,6 +1,5 @@
 import * as mosca from 'mosca';
 import { EventEmitter } from "events";
-import { OnMqttConnectHandler } from './handlers/mqtt-connect-handler';
 import { MqttMessageHandler } from './handlers/mqtt-message-handler';
 import { ConfigManager } from '../configs/config-manager';
 // import http = require('http');

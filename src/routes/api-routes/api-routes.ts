@@ -4,6 +4,7 @@ import { authenticationMiddleware } from '../../middlewares/security/authenticat
 import { OK, UNAUTHORIZED } from "http-status-codes";
 import { RoomsApiRoute } from './rooms-routes';
 import { NodesApiRoute } from './nodes-routes';
+import { AutomationsApiRoute } from "./automation-routes";
 export class ApiRoutes {
     constructor(app: Express, basePath: string = '/api') {
         var router = Router();
@@ -13,6 +14,7 @@ export class ApiRoutes {
         new DevicesApiRoute(router);
         new NodesApiRoute(router);
         new RoomsApiRoute(router);
+        new AutomationsApiRoute(router);
        var response:Response;
 
         // app.use(authenticationMiddleware((req:Request, resp:Response, next:NextFunction)=>{
