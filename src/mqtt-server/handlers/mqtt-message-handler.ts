@@ -4,12 +4,15 @@ import { Repository } from '../../repository/repository';
 import { SmartDevice, HomieNode, HomieNodeCapability } from '../../models/smart-devices';
 import { NodePropertyParser } from '../../parsers/node-property-parser/node-property-parser';
 import { EventEmitter } from "events";
+import { ObjectID } from "bson";
+import { Automation } from "../../models/automation/automation";
+import { ConfigManager } from "../../configs/config-manager";
 
 export class MqttMessageHandler {
     static events: EventEmitter = new EventEmitter();
     static handleReceived(topic: string, message: Buffer) {
         if (topic === `events/automation/trigger`) {
-
+            MqttMessageHandler.handleAutomationEvents(message);
         } else if (TopicParser.isDeviceFwTopic(topic)) {
             MqttMessageHandler.handleDeviceFwTopic(topic, message);
         } else if (TopicParser.isDeviceOtaStatusTopic(topic)) {
@@ -72,20 +75,6 @@ export class MqttMessageHandler {
             console.info('DEVICE OTA STATUS IS 202|READY');
             MMH.events.emit('device:ready_for_firmware', param);
         }
-        //var device: SmartDevice = new SmartDevice();
-        // device.device_id = param.deviceId;
-        // device['fw_' + cleanupNameForStorage(param.property)] = message.toString();
-
-        // var index = {
-        //     key: {
-        //         device_id: 1
-        //     },
-        //     name: "device_id",
-        //     unique: true
-        // };
-        // Repository.updateOne('devices', { device_id: device.device_id }, device, { upsert: true }, true, [index]).then(result => {
-        //     console.info('DEVICE UPDATED: ', device, result.result);
-        // });
     }
     static handleDevicePropertiesTopic(topic: string, message: Buffer) {
         var propertyParam = TopicParser.parseDevicePropertyTopic(topic);
@@ -135,7 +124,7 @@ export class MqttMessageHandler {
 
     }
 
-   static processNodeState(propertyParam:IDeviceTopicParams, message:Buffer){
+    static processNodeState(propertyParam: IDeviceTopicParams, message: Buffer) {
         Repository.getOne<HomieNode>('nodes', { $and: [{ device_id: propertyParam.deviceId }, { node_id: propertyParam.nodeId }] }).then(node => {
 
             if (!node) {
@@ -165,7 +154,7 @@ export class MqttMessageHandler {
             if (!capability) return;
             var msg = message.toString();
             //if (!capability.is_settable) {
-                capability.value = msg;
+            capability.value = msg;
             // } 
             // else {
             //     if ((capability.is_range && rangeValue !== null)) {
@@ -177,10 +166,10 @@ export class MqttMessageHandler {
                 console.info('NODE UPDATED: ', node, result.result);
             });
 
-    })
-   }
+        })
+    }
 
-    
+
     static handleDeviceNodeStateSetterTopic(topic: string, message: Buffer) {
         console.info('DEVICE NODE PROP SETTER MESSAGE RECIEVED: ', topic, message.toString());
         var propertyParam = TopicParser.parseNodeStateSetterTopic(topic);
@@ -188,6 +177,48 @@ export class MqttMessageHandler {
     }
 
 
+    static handleAutomationEvents(message: Buffer) {
+        let automationData: { automation_id: string } | any = message.toJSON();
+        //TODO: get automation details
+        //  get process automation
+        let automation_id = automationData.automation_id;
+        console.log('automationData', automationData);
+        try {
+            Repository.getOne('automations', { _id: new ObjectID(automation_id) })
+                .then((automation: Automation) => {
+                    if (!automation) throw 'Automation not found';
+                    if (!automation.effects) throw `Automation '${automation.display_name || automation.name}' does not have any effect defined `;
+                    Repository.getMany('nodes', {})
+                        .then((nodes: HomieNode[]) => {
+                            // let capabilities:HomieNodeCapability[] = [];
+                            let config = ConfigManager.get('mqtt');
+                            let device_base = config['device_base_topic'];
+                            automation.effects.map(fx => {
+                                let node = nodes.find(n => { return n.node_id === fx.node_id && n.device_id == fx.device_id });
+                                if (node && node.capabilities) {
+                                    node.capabilities.forEach(c => {
+                                        if (c.identifier === fx.capability_identifier) {
+                                            let topic = c.action.topic; // {device_base}{device_id}/{node_id}/on/set
+                                            topic = topic.replace('{device_base}', device_base)
+                                                .replace('{device_id}', node.device_id)
+                                                .replace('{node_id}', node.node_id);
+                                            MqttMessageHandler.events.emit('publish-message', { topic: topic, message: c.value });
+                                        }
+                                    });
+                                }
+                            });
+                        })
+                        .catch(err => {
+                            throw 'Unable to fetch nodes for automation';
+                        });
+
+                }).catch(err => {
+                    throw 'Unable to fetch automation info from database';
+                })
+        } catch (error) {
+            console.log('Uanble to process', error)
+        }
+    }
 }
 
 function cleanupNameForStorage(name: string) {

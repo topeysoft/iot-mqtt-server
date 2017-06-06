@@ -38,11 +38,17 @@ export class HomieNode {
     description:string;
 }
 export class HomieNodeCapability {
-    identifier;
-    value:any;
-    state:string;
+     name: string;
+    type: string = "read_write"
+    display_name:string;
+    identifier:string;
+    is_metric:boolean;
     is_range:boolean;
-    is_settable: boolean;
-    min: number;
-    max: number;
+    is_settable:boolean;
+    min:number;
+    max:number;
+    value:any;
+    state:any;
+    unit:string;
+    action:{topic?:string}
 }
