@@ -1,4 +1,5 @@
 import * as mosca from 'mosca';
+import { MqttMessage } from "./models/mqtt-message";
 import { EventEmitter } from "events";
 import { MqttMessageHandler } from './handlers/mqtt-message-handler';
 import { ConfigManager } from '../configs/config-manager';
@@ -69,14 +70,12 @@ export class MqttServer extends EventEmitter {
   setup() {
     console.log('Mosca server is up and running');
     this.emit('ready')
+    MqttMessageHandler.events.on('publish-message', (messageData:MqttMessage)=>{
+        this.publishMessage(messageData)
+    })
   }
 
-  publishMessage(message: {
-    topic: string,
-    payload: string | Buffer,
-    qos: 0 | 1 | 2, // 0, 1, or 2
-    retain: boolean
-  }) {
+  publishMessage(message: MqttMessage) {
 
     this.moscaServer.publish(message, () => {
     });

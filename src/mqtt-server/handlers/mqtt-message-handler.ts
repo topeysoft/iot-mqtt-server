@@ -7,6 +7,7 @@ import { EventEmitter } from "events";
 import { ObjectID } from "bson";
 import { Automation } from "../../models/automation/automation";
 import { ConfigManager } from "../../configs/config-manager";
+import { MqttMessage } from "../models/mqtt-message";
 
 export class MqttMessageHandler {
     static events: EventEmitter = new EventEmitter();
@@ -178,7 +179,7 @@ export class MqttMessageHandler {
 
 
     static handleAutomationEvents(message: Buffer) {
-        let automationData: { automation_id: string } | any = message.toJSON();
+        let automationData: { automation_id: string } | any = JSON.parse(message.toString());
         //TODO: get automation details
         //  get process automation
         let automation_id = automationData.automation_id;
@@ -190,7 +191,6 @@ export class MqttMessageHandler {
                     if (!automation.effects) throw `Automation '${automation.display_name || automation.name}' does not have any effect defined `;
                     Repository.getMany('nodes', {})
                         .then((nodes: HomieNode[]) => {
-                            // let capabilities:HomieNodeCapability[] = [];
                             let config = ConfigManager.get('mqtt');
                             let device_base = config['device_base_topic'];
                             automation.effects.map(fx => {
@@ -202,7 +202,13 @@ export class MqttMessageHandler {
                                             topic = topic.replace('{device_base}', device_base)
                                                 .replace('{device_id}', node.device_id)
                                                 .replace('{node_id}', node.node_id);
-                                            MqttMessageHandler.events.emit('publish-message', { topic: topic, message: c.value });
+                                            let mqttMessageData: MqttMessage = {
+                                                topic: topic,
+                                                payload: fx.value,
+                                                retain: false,
+                                                qos: 0
+                                            };
+                                            MqttMessageHandler.events.emit('publish-message', mqttMessageData);
                                         }
                                     });
                                 }
@@ -213,7 +219,7 @@ export class MqttMessageHandler {
                         });
 
                 }).catch(err => {
-                    throw 'Unable to fetch automation info from database';
+                    console.log('Unable to fetch automation info from database', err);
                 })
         } catch (error) {
             console.log('Uanble to process', error)
