@@ -7,4 +7,5 @@ import { Component } from '@angular/core';
 })
 export class AppComponent {
   title = 'Over-The-Air  Update (Admin Portal)';
+  title_short = 'OTA Portal';
 }
