@@ -1,4 +1,5 @@
 import mosca = require('mosca');
+import { ApiRoutes } from "./api-routes/api-routes";
 import { EventEmitter } from "events";
 import { ConfigManager } from '../configs/config-manager';
 import path = require('path');
@@ -19,7 +20,7 @@ import { OTAFirmware } from './model/firmware';
 export class OTAServer {
   manifest: any;
   server: OTAServer;
-  app: any;
+  app: Express;
   manifestPath: any;
   dataDir: any;
   private mqttServer: MqttServer;
@@ -27,7 +28,6 @@ export class OTAServer {
     this.dataDir = path.resolve(options.data_dir);
     this.mqttServer = mqttServer;
     this.app = app;
-    this.app.use('/ota', this._httpHandler);
     this.manifestPath = path.join(this.dataDir, '/ota/manifest.json');
     // if (!options.app) {
     //   this.app = express();
@@ -53,7 +53,7 @@ export class OTAServer {
   }
 
   setup() {
-
+    new ApiRoutes(this.app);
     const mkdirIfNotExisting = (dir) => {
       try {
         fs.mkdirSync(dir);
@@ -175,41 +175,8 @@ export class OTAServer {
     return firmware.version !== version;
   }
 
-  async _httpHandler(req: Request, res) {
-    if (req.get('User-Agent') !== 'ESP8266-http-Update' || !req.get('x-ESP8266-free-space') || !req.get('x-ESP8266-version')) {
-      return res.sendStatus(403);
-    }
-
-    let deviceData = req.get('x-ESP8266-version');
-    let deviceId = deviceData.split('=')[0];
-    let deviceVersion = deviceData.split(/=(.+)/)[1];
-    let freeBytes = parseInt(req.get('x-ESP8266-free-space'), 10);
-
-    if (!this.outdated(deviceId, deviceVersion)) {
-      return res.sendStatus(304);
-    }
-
-    let firmware = this.latestDeviceFirmware(deviceId, deviceVersion);
-    let firmwarePath = `${this.dataDir}/ota/firmwares/${firmware.name}.bin`;
-    let firmwareBuffer;
-    try {
-      let firmwareSize = fs.statSync(firmwarePath).size;
-      if (firmwareSize > freeBytes) {
-        console.error('OTA aborted, not enough free space on device', { deviceId: deviceId });
-        return res.sendStatus(304);
-      }
-
-      firmwareBuffer = fs.readFileSync(firmwarePath);
-    } catch (err) {
-      console.error(`OTA aborted, cannot access firmware ${firmwarePath}`, { deviceId: deviceId });
-      return res.sendStatus(304);
-    }
-    let firmwareMd5 = md5(firmwareBuffer);
-    res.set('x-MD5', firmwareMd5);
-
-    console.info('OTA update started', { deviceId: deviceId, version: firmware.version });
-
-    return res.sendFile(path.resolve(firmwarePath)); // path resolve else with relative path express might cry
+  _httpHandler(req: Request, res) {
+    
   }
 
   private _notifyDevicesOfFirmwareChecksums() {

@@ -201,7 +201,8 @@ export class MqttMessageHandler {
                                             let topic = c.action.topic; // {device_base}{device_id}/{node_id}/on/set
                                             topic = topic.replace('{device_base}', device_base)
                                                 .replace('{device_id}', node.device_id)
-                                                .replace('{node_id}', node.node_id);
+                                                .replace('{node_id}', node.node_id)
+                                                .replace('{value}', '1');
                                             let mqttMessageData: MqttMessage = {
                                                 topic: topic,
                                                 payload: fx.value,
