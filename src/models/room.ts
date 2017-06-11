@@ -3,14 +3,12 @@ import { BaseModel } from './base';
 import { HomieNode } from './smart-devices';
 export class Room extends BaseModel {
        detail: string;
-    control_ids: string[];
-    controls: HomieNode[];
+    control_data: RoomControlData[];
 }
 
-// export class RoomControl{
-//     display_name: string;
-//     name: string;
-//     type: string;
-//     control_type: string;
-//     nodes: HomieNode[];
-// }
+export class RoomControlData{
+    node_id:string;
+    device_id:string;
+    control_location:{x:number, y:number};
+    node:HomieNode;
+}

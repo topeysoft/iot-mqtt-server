@@ -71,7 +71,6 @@ export class RoomsApiRoute {
     //   },
 
     // ]
-    console.log(queryParams);
     Repository.getMany('rooms', queryParams).then((rooms) => {
       var done = () => {
         res.json(rooms);
@@ -81,10 +80,13 @@ export class RoomsApiRoute {
           if (nodes && nodes.length > 0) {
             NodePropertyMapper.fixNodeProperties(nodes);
             rooms.map((room: Room) => {
-              if (room.control_ids) {
-                room.controls = nodes.filter((node) => {
-                  return room.control_ids.indexOf(node._id.toString()) !== -1;
-                })
+              if (room.control_data) {
+                room.control_data.map(data=>{
+                 let node= nodes.find(n=>{
+                    return n.node_id===data.node_id && n.device_id === data.device_id;
+                  });
+                  data.node=node||new HomieNode;
+                }) 
               }
             });
             done();
