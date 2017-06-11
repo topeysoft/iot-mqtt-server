@@ -84,8 +84,8 @@ export class RoomsApiRoute {
                 room.control_data.map(data=>{
                  let node= nodes.find(n=>{
                     return n.node_id===data.node_id && n.device_id === data.device_id;
-                  });
-                  data.node=node||new HomieNode;
+                  })||new HomieNode;
+                  data.node=node;
                 }) 
               }
             });
@@ -108,8 +108,30 @@ export class RoomsApiRoute {
     var id = req.params.room_id;
     try {
       var filter = { _id: new ObjectID(id) };
-      Repository.getOne('rooms', filter).then((room) => {
+      Repository.getOne<Room>('rooms', filter).then((room) => {
+       var done = () => {
         res.json(room);
+      }
+      if (room) {
+        Repository.getMany<HomieNode>('nodes', {}).then((nodes) => {
+          if (nodes && nodes.length > 0) {
+            NodePropertyMapper.fixNodeProperties(nodes);
+              if (room.control_data) {
+                room.control_data.map(data=>{
+                 let node= nodes.find(n=>{
+                    return n.node_id===data.node_id && n.device_id === data.device_id;
+                  })||new HomieNode;
+                  data.node=node;
+                }) 
+              }
+            done();
+          } else {
+            done();
+          }
+        });
+      } else {
+        done();
+      }
       })
         .catch((err) => {
           console.log(err);
