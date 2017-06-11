@@ -14,6 +14,7 @@ const NodeTypeMap = {
     'rgbw-light': 'Multi-color (+ white) LED light',
     'rgbw-led-light': 'Multi-color (+ white) LED light',
 
+    'switch': 'Relay Switch',
     'outlet': 'Power outlet',
     'wall-outlet': 'Power outlet',
     'power-outlet': 'Power outlet',
