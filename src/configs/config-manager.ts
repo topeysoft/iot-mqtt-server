@@ -4,16 +4,16 @@ import * as fs from 'fs';
 import * as path from 'path';
 export class ConfigManager {
     static getConfig() {
-        return ConfigManager.configData;
-        // process.env.NODE_ENV = process.env.NODE_ENV || 'development';
-        // switch (process.env.NODE_ENV) {
-        //     case 'development':
-        //         return DevConfig;
-        //     case 'production':
-        //         return ProdConfig;
-        //     default:
-        //         return DevConfig;
-        // }
+      //  return ConfigManager.configData;
+      //  process.env.NODE_ENV = process.env.NODE_ENV || 'development';
+        switch (process.env.NODE_ENV) {
+            case 'development':
+                return DevConfig;
+            case 'production':
+                return ProdConfig;
+            default:
+                return DevConfig;
+        }
     }
 
     private static configPath: string = path.resolve(`./configurations/${process.env.NODE_ENV || 'development'}.json`);

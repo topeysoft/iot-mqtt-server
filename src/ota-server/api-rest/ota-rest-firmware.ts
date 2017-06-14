@@ -4,28 +4,45 @@ import { Repository } from "./../../repository/repository.diskdb";
 import { INTERNAL_SERVER_ERROR, BAD_REQUEST } from "http-status-codes";
 import { ObjectID } from "mongodb";
 export class FirmwareApiRoutes {
+    deleteFirmware: any;
+    replaceFirmware: any;
+    updateFirmware: any;
+    createFirmware: any;
     /**
      *
      */
 
-    static getRoutes():Express{
-        return (new FirmwareApiRoutes()).routes;
+    static getApp():Express{
+       var api = new FirmwareApiRoutes();
+        return  api.expressApp;
     };
     constructor() {
-        this.basePath = `firmwares`;
-        this.routes = express();
+        this.basePath = `/firmwares`;
+        this.expressApp = express.Router();
         this.setup();
     }
 
-    private routes:Express;
+    private expressApp:any;
     private basePath;
 
     public setup() {
-        this.routes.get(`${this.basePath}`, (req:Request, resp) => {
+        this.expressApp.get(`${this.basePath}`, (req:Request, resp) => {
             return this.getFirmwares(req, resp);
         });
-        this.routes.get(`${this.basePath}/:firmware_id`, (req, resp) => {
+        this.expressApp.get(`${this.basePath}/:firmware_id`, (req, resp) => {
             return this.getFirmwareById(req, resp);
+        });
+        this.expressApp.post(`${this.basePath}`, (req, resp) => {
+            return this.createFirmware(req, resp);
+        });
+        this.expressApp.put(`${this.basePath}/:firmware_id`, (req, resp) => {
+            return this.replaceFirmware(req, resp);
+        });
+        this.expressApp.patch(`${this.basePath}/:firmware_id`, (req, resp) => {
+            return this.updateFirmware(req, resp);
+        });
+        this.expressApp.delete(`${this.basePath}/:firmware_id`, (req, resp) => {
+            return this.deleteFirmware(req, resp);
         });
     }
 

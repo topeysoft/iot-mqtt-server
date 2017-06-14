@@ -52,7 +52,7 @@ export class Server {
         }));
         this.app.use(cookieParser("super-strong-secret-dc0649f7-e9b9-4133-8e2e-6f4677bb3492"));
         this.app.use(methodOverride());
-        this.app.use(function (err: any, req: express.Request, res: express.Response, next: express.NextFunction) {
+        this.app.use( (err: any, req: express.Request, res: express.Response, next: express.NextFunction) =>{
             err.status = 404;
             next(err);
         });

@@ -1,5 +1,4 @@
 import mosca = require('mosca');
-import { ApiRoutes } from "./api-routes/api-routes";
 import { EventEmitter } from "events";
 import { ConfigManager } from '../configs/config-manager';
 import path = require('path');
@@ -16,6 +15,8 @@ import { Repository } from '../repository/repository';
 import { SmartDevice } from '../models/smart-devices';
 import { MqttMessageHandler } from "../mqtt-server/handlers/mqtt-message-handler";
 import { OTAFirmware } from './model/firmware';
+import { INTERNAL_SERVER_ERROR } from "http-status-codes";
+import { OtaRestApi } from "./api-rest/ota-rest-app";
 
 export class OTAServer {
   manifest: any;
@@ -23,12 +24,22 @@ export class OTAServer {
   app: Express;
   manifestPath: any;
   dataDir: any;
+   private base_path = "/api/ota/";
   private mqttServer: MqttServer;
   constructor(app, mqttServer, options) {
     this.dataDir = path.resolve(options.data_dir);
     this.mqttServer = mqttServer;
     this.app = app;
     this.manifestPath = path.join(this.dataDir, '/ota/manifest.json');
+    let otaRestApp = OtaRestApi.getApp();
+     this.app.use(this.base_path, otaRestApp);
+      this.app.use(this.base_path, (err: any, req: express.Request, res: express.Response, next: express.NextFunction) =>{
+            err.status = 404;
+            if(err){
+              console.log("There was an error:", err);
+              res.status(INTERNAL_SERVER_ERROR).send("Unable to complete your request.");
+            }
+        });
     // if (!options.app) {
     //   this.app = express();
     //   this.server = createServer(this.app);
@@ -53,7 +64,6 @@ export class OTAServer {
   }
 
   setup() {
-    new ApiRoutes(this.app);
     const mkdirIfNotExisting = (dir) => {
       try {
         fs.mkdirSync(dir);
