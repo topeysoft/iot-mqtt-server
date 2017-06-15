@@ -6,24 +6,25 @@ import { ConfigManager } from '../configs/config-manager';
 // import http = require('http');
 
 export class MqttServer extends EventEmitter {
+  private config: any;
+  private mongoUrl: any;
   constructor() {
     super();
     this.init();
-
   }
   private moscaServer: mosca.Server;
   public attachHttpServer(httpServer) {
     this.moscaServer.attachHttpServer(httpServer);
   }
   private init() {
-    var config = ConfigManager.getConfig();
-    var mongoUrl = config.mongodb.connectionUrl;
-    var datastore = {
-      type: 'mongo',
-      url: mongoUrl,
-      pubsubCollection: 'moscadata',
-      mongo: {}
-    };
+    this.config = ConfigManager.getConfig();
+    this.mongoUrl = this.config.mongodb.connectionUrl;
+    // var datastore = {
+    //   type: 'mongo',
+    //   url: this.mongoUrl,
+    //   pubsubCollection: 'moscadata',
+    //   mongo: {}
+    // };
 
     var moscaSettings = {
       port: 1883,
@@ -40,29 +41,30 @@ export class MqttServer extends EventEmitter {
 
 
     this.moscaServer.on('clientConnected', (client) => {
+      this.emit('client:connected', client.id);
       console.log('client connected', client.id);
     });
 
     this.moscaServer.on('published', (packet, client) => {
       this.emit('received', packet, client);
       MqttMessageHandler.handleReceived(packet.topic, packet.payload);
-      // console.log('Published : ', `topic-${packet.topic}`,`payload-${packet.payload.toString()}`);
     });
 
     this.moscaServer.on('subscribed', function (topic, client) {
-      console.log('subscribed : ', topic);
+      console.log('subscribed: ', topic);
+      this.emit('client:subscribed', topic);
     });
 
     this.moscaServer.on('unsubscribed', (topic, client) => {
-      console.log('unsubscribed : ', topic);
+      console.log('unsubscribed: ', topic);
     });
 
     this.moscaServer.on('clientDisconnecting', (client) => {
-      console.log('clientDisconnecting : ', client.id);
+      console.log('clientDisconnecting: ', client.id);
     });
 
     this.moscaServer.on('clientDisconnected', (client) => {
-      console.log('clientDisconnected : ', client.id);
+      console.log('clientDisconnected: ', client.id);
     });
 
   }

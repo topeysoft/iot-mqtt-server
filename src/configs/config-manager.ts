@@ -3,17 +3,19 @@ import { ProdConfig } from './config.prod';
 import * as fs from 'fs';
 import * as path from 'path';
 export class ConfigManager {
+    private static config;
     static getConfig() {
       //  return ConfigManager.configData;
       //  process.env.NODE_ENV = process.env.NODE_ENV || 'development';
         switch (process.env.NODE_ENV) {
             case 'development':
-                return DevConfig;
+                ConfigManager.config= DevConfig;
             case 'production':
-                return ProdConfig;
+                 ConfigManager.config= ProdConfig;
             default:
-                return DevConfig;
+                 ConfigManager.config= DevConfig;
         }
+        return  ConfigManager.config;
     }
 
     private static configPath: string = path.resolve(`./configurations/${process.env.NODE_ENV || 'development'}.json`);
