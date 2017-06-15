@@ -60,6 +60,7 @@
     "mocha": "^3.4.2",
     "nodemon": "^1.11.0",
     "protractor": "~4.0.13",
+    "rewire": "^2.5.2",
     "sinon": "^2.3.4",
     "ts-node": "1.2.1",
     "tslint": "^4.5.1",

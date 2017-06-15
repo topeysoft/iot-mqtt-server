@@ -8,7 +8,6 @@ export class OtaRestApi {
     public app: Express= express();
     public firmwareApi: Express
     constructor() {
-        this.setup();
     }
 
     init(){
