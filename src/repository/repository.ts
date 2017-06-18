@@ -1,21 +1,29 @@
+import * as path from 'path';
+import * as fs from 'fs';
 
 //import * as loki from 'lokijs';
 
-import { MongoClient, MongoError, Db, InsertOneWriteOpResult, InsertWriteOpResult, UpdateWriteOpResult, DeleteWriteOpResultObject, FindOneOptions, CollectionAggregationOptions, Collection } from 'mongodb';
+import { MongoClient, MongoError, Db, InsertOneWriteOpResult, InsertWriteOpResult, UpdateWriteOpResult, DeleteWriteOpResultObject, FindOneOptions, CollectionAggregationOptions, Collection, GridFSBucket, GridFSBucketReadStream, ObjectID } from 'mongodb';
 import { RepoQueryParams } from './repo-query-params';
+let Grid = require('gridfs');
+
 export class Repository {
 
-    public static initialize(connectionUrl: string, force: boolean = false) {
-        if (!Repository._db || force) {
-            MongoClient.connect(connectionUrl, (err: MongoError, database: Db) => {
+    public static initialize(options: { connectionUrl: string, force: boolean, fileBucketName?: string } = { connectionUrl: '', force: false, fileBucketName: 'my-files-bucket' }) {
+        if (!Repository._db || options.force) {
+            MongoClient.connect(options.connectionUrl, (err: MongoError, database: Db) => {
                 if (err) return console.error("MongoDB Connection error:", err.message);
                 Repository._db = database;
+                Repository._bucketName = options.fileBucketName;
+                Repository._bucket = new GridFSBucket(Repository._db, { bucketName: Repository._bucketName });
             });
         }
     }
 
     private static _repo: Repository;
     private static _db: Db;
+    private static _bucketName: string;
+    private static _bucket: GridFSBucket;
 
 
 
@@ -61,7 +69,7 @@ export class Repository {
         if (createIndexes && createIndexes.length > 1) { collection.createIndexes(createIndexes) }
         if (setDate) doc['last_modified'] = new Date().toISOString();
         delete doc['_id'];
-        var update = {$set:doc};
+        var update = { $set: doc };
         return collection.updateOne(filter, update, options);
     }
     // public static partiallyUpdate(collectionName: string, filter, update, options = {}, setDate = true, createIndexes?: Object[]): Promise<UpdateWriteOpResult> {
@@ -86,6 +94,196 @@ export class Repository {
                 .then((count) => resolve(count > 0))
                 .catch((error) => reject(error));
         });
+    }
+
+
+    //  GRID FS
+    public static getFileData<T>(query, tempFilePath): Promise<T> {
+        return new Promise((resolve, reject) => {
+            Repository.getOneFileInfo(query).then((info: any) => {
+                if (!info) return reject('File not found');
+                let tempFileName = path.join(tempFilePath, info.filename);
+                let dir = path.dirname(tempFileName);
+                try {
+                    Repository.mkdirRecursive(dir);
+                } catch (err) {
+                    console.log('Unable to create dir', dir, err);
+                }
+                console.log('Opening stream');
+                Repository._bucket.openDownloadStreamByName(info.filename)
+                    .pipe(fs.createWriteStream(tempFileName)).
+                    on('error', (error) => {
+                        console.log('Stream error', error);
+
+                        reject(error);
+                    }).
+                    on('finish', () => {
+                        console.log('Stream finished');
+                        resolve(path.resolve(tempFileName));
+                    });
+            }).catch(err => {
+                console.log('Unable to get info', err);
+                reject(err);
+            })
+
+        })
+    }
+    public static getOneFileInfo<T>(query): Promise<T> {
+        return Repository.getOne<T>(`${Repository._bucketName}.files`, query);
+    }
+    public static getManyFileInfo<T>(query): Promise<T[]> {
+        return Repository.getMany<T>(`${Repository._bucketName}.files`, query);
+    }
+    // public static createFileFromPath<T>(path: string | Buffer, folderAndFilename): Promise<T> {
+    //     return new Promise((resolve, reject) => {
+    //         try {
+    //             if (!path) throw new Error('File name was null');
+    //             fs.createReadStream(path).
+    //                 pipe(Repository._bucket.openUploadStream(folderAndFilename)).
+    //                 on('error', (error) => {
+    //                     reject(error);
+    //                 }).
+    //                 on('finish', () => {
+    //                     console.log(`${folderAndFilename} upload complete.`);
+    //                     Repository.getOneFileInfo({ filename: folderAndFilename })
+    //                         .then((file) => {
+    //                             console.log(`Found uploaded info.`);
+    //                             return resolve(file);
+    //                         }).catch(err => {
+    //                             console.log(`Unable to get uploaded info.`);
+    //                             return reject(err);
+    //                         })
+    //                 });
+    //         } catch (error) {
+    //             return reject(error);
+    //         }
+    //     })
+    // }
+    public static createFileFromPath<T>(path: string | Buffer, folderAndFilename): Promise<T> {
+        return new Promise((resolve, reject) => {
+            let query = { filename: folderAndFilename };
+
+            try {
+                if (!path) throw new Error('File name was null');
+
+                Repository.beginUploadProcess(path, folderAndFilename).then(fileInfo => {
+                    resolve(fileInfo);
+                }).catch(err => {
+                    reject(err);
+                });
+
+            } catch (error) {
+                return reject(error);
+            }
+        })
+    }
+
+    public static updateFileMetaData<T>(folderAndFilename_or_id, data): Promise<T> {
+        return new Promise((resolve, reject) => {
+            let file_id = folderAndFilename_or_id;
+            let query: any = { filename: file_id };
+            try {
+                query = { _id: ObjectID.createFromHexString(file_id) };
+            } catch (error) { }
+            try {
+                console.log('Metadata', data);
+                Repository.updateOne<any>(`${Repository._bucketName}.files`, query, { metadata: data }).then(updated => {
+                    Repository.getOneFileInfo(query).then(fileInfo => {
+                        resolve(fileInfo);
+                    }).catch(err => {
+                        reject(err);
+                    })
+                }).catch(err => {
+                    reject(err);
+                });
+
+            } catch (error) {
+                return reject(error);
+            }
+        })
+    }
+    public static renameFile<T>(id, newFilename): Promise<T> {
+        return new Promise((resolve, reject) => {
+            let file_id = id;
+            let query: any = { _id: file_id };
+            try {
+                query = { _id: ObjectID.createFromHexString(file_id) };
+            } catch (error) { }
+            try {
+                Repository._bucket.rename(query._id, newFilename, (err) => {
+                    if (err) {
+                        console.log('Unable to rename file with id', query._id);
+                        return reject(err);
+                    }
+                    Repository.getOneFileInfo(query).then(fileInfo => {
+                        resolve(fileInfo);
+                    }).catch(err => {
+                        console.log('Unable to get detail after renaming file with id', query._id);
+                        reject(err);
+                    })
+                })
+
+            } catch (error) {
+                console.log('Unknown error while renaming file with id', query._id);
+                return reject(error);
+            }
+        })
+    }
+    public static deleteFile<T>(id): Promise<T> {
+        return new Promise((resolve, reject) => {
+            let file_id = id;
+            let query: any = { _id: file_id };
+            try {
+                query = { _id: ObjectID.createFromHexString(file_id) };
+            } catch (error) { }
+            try {
+                Repository._bucket.delete(query._id, (err) => {
+                    if (err) {
+                        console.log('Unable to delete file with id', query._id);
+                        return reject(err);
+                    }
+                    resolve({deleted:true});
+                })
+
+            } catch (error) {
+                console.log('Unknown error while deleting file with id', query._id);
+                return reject(error);
+            }
+        })
+    }
+
+    private static beginUploadProcess(path, folderAndFilename) {
+        return new Promise((resolve, reject) => {
+            let bucketStream = Repository._bucket.openUploadStream(folderAndFilename);
+            fs.createReadStream(path).
+                pipe(bucketStream).
+                on('error', (error) => {
+                    reject(error);
+                }).
+                on('finish', () => {
+                    console.log(`${folderAndFilename} upload complete.`);
+                    Repository.getOneFileInfo({ filename: folderAndFilename })
+                        .then((file) => {
+                            console.log(`Found uploaded info.`);
+                            return resolve(file);
+                        }).catch(err => {
+                            console.log(`Unable to get uploaded info.`);
+                            return reject(err);
+                        })
+                });
+        })
+    }
+    private static mkdirRecursive(targetDir) {
+        const sep = path.sep;
+        const initDir = path.isAbsolute(targetDir) ? sep : '';
+        targetDir.split(sep).reduce((parentDir, childDir) => {
+            const curDir = path.resolve(parentDir, childDir);
+            if (!fs.existsSync(curDir)) {
+                fs.mkdirSync(curDir);
+            }
+
+            return curDir;
+        }, initDir);
     }
 }
 

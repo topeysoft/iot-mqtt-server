@@ -7,20 +7,24 @@
         "removeComments": true,
         "preserveConstEnums": true,
         "outDir": "./build/",
-        "sourceRoot": "./src",
+        "sourceRoot": "src",
         "sourceMap": true,
-        "pretty":true,
-        "emitDecoratorMetadata":true,
-        "experimentalDecorators":true, 
-        "forceConsistentCasingInFileNames":true
-        
+        "pretty": true,
+        "emitDecoratorMetadata": true,
+        "experimentalDecorators": true,
+        "forceConsistentCasingInFileNames": true
+
     },
     "include": [
         "src/**/*"
     ],
     "exclude": [
+        "tests/**/*",
+        "ota-portal/**/*",
+        "src/frontend/**/*",
         "node_modules",
         "**/*.spec.ts",
+        "**/*test.ts",
         "**/*.js"
     ]
 }

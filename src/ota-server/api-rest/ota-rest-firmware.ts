@@ -4,10 +4,30 @@ import { Repository } from "./../../repository/repository.diskdb";
 import { INTERNAL_SERVER_ERROR, BAD_REQUEST } from "http-status-codes";
 import { ObjectID } from "mongodb";
 export class FirmwareApiRoutes {
-    deleteFirmware: any;
-    replaceFirmware: any;
-    updateFirmware: any;
-    createFirmware: any;
+
+    constructor() {
+        this.expressApp = express.Router();
+    }
+
+
+    public expressApp: any;
+    public basePath = '/firmwares';
+
+    init() {
+        this.setup();
+    }
+    deleteFirmware(req:Request, resp:Response){
+    
+    }
+    replaceFirmware(req:Request, resp:Response){
+    
+    }
+    updateFirmware(req:Request, resp:Response){
+    
+    }
+    createFirmware(req:Request, resp:Response){
+    
+    }
     /**
      *
      */
@@ -17,16 +37,6 @@ export class FirmwareApiRoutes {
         var api = new FirmwareApiRoutes();
         return api.expressApp;
     };
-    constructor() {
-        this.expressApp = express.Router();
-    }
-
-    init() {
-        this.setup();
-    }
-    public expressApp: any;
-    public basePath = '/firmwares';
-
     public setup() {
         this.expressApp.get(`${this.basePath}`, (req: Request, resp) => {
             return this.getFirmwares(req, resp);

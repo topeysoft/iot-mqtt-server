@@ -11,6 +11,7 @@ export class MqttServer extends EventEmitter {
   constructor() {
     super();
     this.init();
+    
   }
   private moscaServer: mosca.Server;
   public attachHttpServer(httpServer) {

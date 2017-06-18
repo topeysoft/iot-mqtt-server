@@ -1,34 +1,32 @@
-var rewire = require('rewire');
-var expect = require('expect.js');
-var assert = require('chai').assert;
-var sinon = require('sinon');
-declare var before;
-declare var after;
 
+
+import * as mosca from 'mosca';
 import { MqttServer } from '../../src/mqtt-server/mqtt-server';
 import { ConfigManager } from "../../src/configs/config-manager";
 
 var config = { mongodb: { connectionUrl: '' } };
-var ConfigManagerMock, emitSpy, moscaServerStub, server: any
-, testMqttClient={ id: 'test_id' }
-, topic='test/topic';
+var ConfigManagerMock, emitSpy, moscaServerStub, moscaServerMock, server: any
+    , testMqttClient = { id: 'test_id' }
+    , topic = 'test/topic';
 describe('MQTTServer', () => {
     var sandbox;
     before(() => {
         sandbox = sinon.sandbox;
-        moscaServerStub = sandbox.stub(MqttServer.prototype, 'moscaServer');
-        ConfigManagerMock = sandbox.mock(ConfigManager);
-    })
-    beforeEach(() => {
         server = new MqttServer;
         emitSpy = sandbox.spy(server, 'emit');
-
+        ConfigManagerMock = sandbox.mock(ConfigManager);
+        moscaServerMock = sandbox.stub(mosca.Server.prototype);
+       // moscaServerStub = sandbox.stub(MqttServer.prototype, 'moscaServer');
     })
+    beforeEach(() => { })
     after(() => {
         sandbox.restore();
     });
     afterEach(() => {
         emitSpy.restore();
+     //   moscaServerStub.restore();
+        ConfigManagerMock.restore();
+
     });
     describe('constructor', () => {
         it('should be truthy', () => {
@@ -37,23 +35,22 @@ describe('MQTTServer', () => {
         it('should be initialized', () => {
             let spy = sandbox.spy(MqttServer.prototype, 'init');
             let server = new MqttServer;
-            assert.isTrue(spy.calledOnce)
+            assert.isTrue(spy.calledOnce);
         })
     })
     describe('init', () => {
         it('should retrieve configuration data', () => {
-            expect(server.config).to.be.ok();
             ConfigManagerMock.expects('getConfig').returns(config);
             server.init();
-            ConfigManagerMock.verify();
-            ConfigManagerMock.restore();
+            // assert.isTrue((<any>(ConfigManager.getConfig)).callOnce);
+            expect(server.config).to.be.ok();
         });
         it('should create server instance ', () => {
-            expect(server.config).to.be.ok();
+            expect(server.moscaServer).to.be.ok();
         });
         it('should call setupSercurity', () => {
             let spy = sandbox.spy(server, 'setupSecurity');
-            server.init();
+            server.init(); 
             assert.isTrue(spy.calledOnce)
         });
 

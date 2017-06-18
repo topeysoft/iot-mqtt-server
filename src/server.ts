@@ -1,4 +1,5 @@
 import * as bodyParser from "body-parser";
+import { FileServer } from "./file-server/file-server";
 import * as cookieParser from "cookie-parser";
 import * as logger from "morgan";
 import * as path from "path";
@@ -16,6 +17,7 @@ import { RepositoryType } from './repository/repository-types';
 import { Passport, PassportStatic } from 'passport';
 import { PassportOpenIdMiddleware } from './middlewares/security/open-id/open-id';
 import { OTAServer } from "./ota-server/ota-server";
+const fileUpload = require('express-fileupload');
 
 export class Server {
     otaServer: any;
@@ -28,11 +30,14 @@ export class Server {
         this.config();
         this.setupHeaders();
         this.routes();
+        let fileServer = new FileServer().getApp();
+        this.app.use('/file-api', fileServer);
         this.api();
-        this.mqttServer = new MqttServer();;
+        this.mqttServer = new MqttServer();
         this.initializeRepository();
-        var otaConfig=ConfigManager.get('ota')
+        var otaConfig = ConfigManager.get('ota');
         this.otaServer = new OTAServer(this.app, this.mqttServer, otaConfig);
+
     }
     public app: Express;
     public passport: Passport | any;
@@ -42,25 +47,31 @@ export class Server {
 
     private config() {
         ConfigManager.initSync();
+        let config=ConfigManager.get('file_upload')||'';
+        let file_upload_limit = config.size_limit;
+        //this.requestSizeLimit = this.config.request.size_limit || '1mb';
         this.app.use(express.static(path.join(__dirname, "public")));
         this.app.set("views", path.join(__dirname, "views"));
         this.app.set("view engine", "pug");
         this.app.use(logger("dev"));
-        this.app.use(bodyParser.json());
-        this.app.use(bodyParser.urlencoded({
-            extended: true
-        }));
+
+       this.app.use(bodyParser.json({ limit: file_upload_limit }));
+        this.app.use(bodyParser.urlencoded({ limit: file_upload_limit, extended: true }));
+
         this.app.use(cookieParser("super-strong-secret-dc0649f7-e9b9-4133-8e2e-6f4677bb3492"));
         this.app.use(methodOverride());
-        this.app.use( (err: any, req: express.Request, res: express.Response, next: express.NextFunction) =>{
-            err.status = 404;
+
+        this.app.use(fileUpload(
+            { limits: { fileSize: file_upload_limit } }
+        ));
+
+        this.app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+            console.log('Error occured:', err );
             next(err);
         });
         this.setupSecurity();
         this.app.use(errorHandler());
-        this.app.use((req, res, next) => {
-            next()
-        });
+        
     }
     public routes() {
         let router: Router;
@@ -77,15 +88,16 @@ export class Server {
         new CorsFilterMiddleware(this.app);
     }
     public setupSecurity() {
-      //  this.app.use(this.passport.initialize());
-      //  this.app.use(this.passport.session());
-       // new PassportOpenIdMiddleware(this.passport);
+        //  this.app.use(this.passport.initialize());
+        //  this.app.use(this.passport.session());
+        // new PassportOpenIdMiddleware(this.passport);
     }
     private initializeRepository() {
         var config = ConfigManager.getConfig();
-        Repository.initialize(config.mongodb.connectionUrl, true);
+        let mongoOptions = { connectionUrl: config.mongodb.connectionUrl, force: true, fileBucketName: 'iot-hub-bucket' }
+        Repository.initialize(mongoOptions);
         // Repository.initialize(config.tingodb.dbPath, RepositoryType.TingoDB)
-    } 
+    }
 
 
 }

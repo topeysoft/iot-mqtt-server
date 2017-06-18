@@ -26,18 +26,13 @@ describe("FirmwareApiRoutes", () => {
         })
     });
     describe('setup', ()=>{
-        it('should call expressApp get with basePath', ()=>{
+        it('should call expressApp.get with basePath', ()=>{
             let appInstance = new FirmwareApiRoutes;
             let spy = sinon.spy(appInstance.expressApp, 'get');
             appInstance.setup();
             assert.isTrue(spy.withArgs(appInstance.basePath).calledOnce);
         })
-        it('should call getFirmwares', ()=>{
-            let appInstance = new FirmwareApiRoutes;
-            let spy = sinon.spy(appInstance.getFirmwares, 'get');
-            appInstance.setup();
-            assert.isTrue(spy.calledOnce);
-        })
+       
         it('should call expressApp get with basePath and :id_param', ()=>{
             let appInstance = new FirmwareApiRoutes;
             let spy = sinon.spy(appInstance.expressApp, 'get');

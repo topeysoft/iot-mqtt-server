@@ -50,7 +50,7 @@ module.exports = function (grunt) {
     ts: {
       app: {
         files: [{
-        fast:false,
+          fast: false,
           src: ["./src/\*\*/\*.ts", "!src/.baseDir.ts"],
           dest: "./build"
         }],
@@ -61,7 +61,16 @@ module.exports = function (grunt) {
           "sourceMap": true,
           "experimentalDecorators": true,
           "emitDecoratorMetadata": true,
-         // sourceRoot: "./src/"
+          "sourceRoot": "./src/",
+          "exclude": [
+            "tests/**/*",
+            "ota-portal/**/*",
+            "src/frontend/**/*",
+            "node_modules",
+            "**/*.spec.ts",
+            "**/*test.ts",
+            "**/*.js"
+          ]
         }
       },
       deploy: {

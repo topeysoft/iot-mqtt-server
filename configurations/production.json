@@ -14,6 +14,9 @@
         , "allow_credentials": "false"
 
     },
+    "file_upload": {
+        "size_limit": "4194304" 
+    },
     "mqtt": {
         "device_base_topic": "devices/"
     },

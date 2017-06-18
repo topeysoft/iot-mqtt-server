@@ -5,17 +5,17 @@ import * as path from 'path';
 export class ConfigManager {
     private static config;
     static getConfig() {
-      //  return ConfigManager.configData;
+       return ConfigManager.configData;
       //  process.env.NODE_ENV = process.env.NODE_ENV || 'development';
-        switch (process.env.NODE_ENV) {
-            case 'development':
-                ConfigManager.config= DevConfig;
-            case 'production':
-                 ConfigManager.config= ProdConfig;
-            default:
-                 ConfigManager.config= DevConfig;
-        }
-        return  ConfigManager.config;
+        // switch (process.env.NODE_ENV) {
+        //     case 'development':
+        //         ConfigManager.config= DevConfig;
+        //     case 'production':
+        //          ConfigManager.config= ProdConfig;
+        //     default:
+        //          ConfigManager.config= DevConfig;
+        // }
+        // return  ConfigManager.config;
     }
 
     private static configPath: string = path.resolve(`./configurations/${process.env.NODE_ENV || 'development'}.json`);
