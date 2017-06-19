@@ -164,8 +164,9 @@ export class Repository {
             let query = { filename: folderAndFilename };
 
             try {
+                if(!folderAndFilename)  throw new Error('Output file name must be specified');
                 if (!path) throw new Error('File name was null');
-
+                folderAndFilename=folderAndFilename.split('?')[0];
                 Repository.beginUploadProcess(path, folderAndFilename).then(fileInfo => {
                     resolve(fileInfo);
                 }).catch(err => {
@@ -204,15 +205,18 @@ export class Repository {
     }
     public static renameFile<T>(id, newFilename): Promise<T> {
         return new Promise((resolve, reject) => {
-            let file_id = id;
+            try {
+                if(!newFilename) return new Error('New file name not specifed')
+                 let file_id = id;
             let query: any = { _id: file_id };
             try {
                 query = { _id: ObjectID.createFromHexString(file_id) };
             } catch (error) { }
-            try {
+           
+                newFilename=newFilename.split('?')[0];
                 Repository._bucket.rename(query._id, newFilename, (err) => {
                     if (err) {
-                        console.log('Unable to rename file with id', query._id);
+                        console.log('Unable to rename file with id',  id);
                         return reject(err);
                     }
                     Repository.getOneFileInfo(query).then(fileInfo => {
@@ -224,7 +228,7 @@ export class Repository {
                 })
 
             } catch (error) {
-                console.log('Unknown error while renaming file with id', query._id);
+                console.log('Unknown error while renaming file with id', id);
                 return reject(error);
             }
         })

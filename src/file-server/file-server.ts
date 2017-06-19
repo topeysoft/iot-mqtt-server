@@ -6,6 +6,8 @@ import * as express from 'express';
 import { Response, Request } from 'express';
 import { OK, BAD_REQUEST, INTERNAL_SERVER_ERROR, CREATED, MULTI_STATUS } from "http-status-codes";
 import { ObjectID } from "mongodb";
+var Jimp = require("jimp");
+
 export class FileServer {
     static tempPath: string;
     private static instance: FileServer;
@@ -61,6 +63,9 @@ export class FileServer {
     viewFile(req: Request, resp: Response) {
         try {
             let file_id = req.url.replace('/view/', '');
+            file_id = file_id.split('?')[0];
+            let fileQuery = req.query;
+            console.log(fileQuery);
             let query: any = { filename: file_id };
             let tempFilePath = FileServer.tempPath;
 
@@ -70,7 +75,16 @@ export class FileServer {
 
             Repository.getFileData(query, tempFilePath).then((tempFileName: any) => {
                 console.log('sending file ', tempFileName);
-                resp.status(OK).sendFile(tempFileName);
+                Jimp.read(tempFileName).then((image) => {
+                    FileServer.instance.processImageFile(tempFileName, fileQuery).then((newName:string) => {
+                        resp.status(OK).sendFile(newName);
+                    }).catch(err => {
+                        resp.status(OK).sendFile(tempFileName);
+                    });
+                }).catch((err) => {
+                    console.error(err);
+                    resp.status(OK).sendFile(tempFileName);
+                });
             }).catch(err => {
                 resp.status(INTERNAL_SERVER_ERROR).send(err);
             });
@@ -79,6 +93,71 @@ export class FileServer {
         }
     }
 
+
+    private processImageFile(tempFileName, params) {
+        return new Promise((resolve, reject) => {
+            Jimp.read(tempFileName).then((image) => {
+                let fileExt = path.extname(tempFileName);
+                var newName = tempFileName.replace(fileExt, '-256' + fileExt);
+                try {
+                    let fnArray = this.parseImageProcessParameters(params)
+                    if (fnArray && fnArray.length > 0) {
+                        fnArray.forEach((fn, i) => {
+                            console.log('Applying image process: ', fn);
+                            image[fn.name].apply(image, fn.args);
+                            if (i >= (fnArray.length - 1)) {
+                                image.write(newName, () => {
+                                    resolve(newName)
+                                });
+                            }
+                        });
+                    } else {
+                        image.write(newName, () => {
+                            resolve(newName)
+                        });
+                    }
+
+                } catch (error) {
+                    resolve(tempFileName);
+                }
+                // save 
+            }).catch((err) => {
+                console.error(err);
+                resolve(tempFileName);
+
+            });
+        });
+    }
+    parseImageProcessParameters(params) {
+        let processFn = [];
+        let width, height, quality;
+        width = params.w || params.width;
+        height = params.h || params.height;
+        quality = params.q || params.quality;
+      //  if (width && !height) height = width;
+      //  if (height && !width) width = height;
+        if (width && !height) processFn.push({ name: 'resize', args: [+width, Jimp.AUTO] });
+        else if (width && height) processFn.push({ name: 'resize', args: [+width, +height] });
+        if (params.scale!==undefined) processFn.push({ name: 'scale', args: [+params.scale] });
+        if (quality!==undefined) processFn.push({ name: 'quality', args: [+quality] });
+        if (params.greyscale!==undefined) processFn.push({ name: 'greyscale', args: [] });
+        if (params.grayscale!==undefined) processFn.push({ name: 'greyscale', args: [] });
+        if (params.normalize!==undefined) processFn.push({ name: 'normalize', args: [] });
+        if (params.invert!==undefined) processFn.push({ name: 'invert', args: [] });
+        if (params.sepia!==undefined) processFn.push({ name: 'sepia', args: [] });
+        if (params.dither565!==undefined) processFn.push({ name: 'dither565', args: [] });
+        if (params.opague!==undefined) processFn.push({ name: 'opaque', args: [] });
+        if (params.fade!==undefined) processFn.push({ name: 'fade', args: [+params.fade] });
+        if (params.background!==undefined) processFn.push({ name: 'background', args: [params.background] });
+        if (params.opacity!==undefined) processFn.push({ name: 'opacity', args: [+params.opacity] });
+        if (params.blur!==undefined) processFn.push({ name: 'blur', args: [+params.blur] });
+        if (params.gaussian!==undefined) processFn.push({ name: 'gaussian', args: [+params.gaussian] });
+        if (params.posterize!==undefined) processFn.push({ name: 'posterize', args: [+params.posterize] });
+        if (params.brightness!==undefined) processFn.push({ name: 'brightness', args: [+params.brightness] });
+        if (params.contrast!==undefined) processFn.push({ name: 'contrast', args: [+params.contrast] });
+        if (params.gaussian!==undefined) processFn.push({ name: 'gaussian', args: [+params.gaussian] });
+        return processFn;
+    }
     getAllFiles(req: Request, resp: Response) {
         Repository.getManyFileInfo({}).then((data: any) => {
             if (data && data.length > 0) {
@@ -114,6 +193,7 @@ export class FileServer {
     createFile(req: any, resp: Response) {
         try {
             var dir = req.body.folder || '';
+            var metadata = req.body.matadata;
             var files = req.files;
             if (!files) throw new Error('No files to upload');
             var keys: string[] = Object.keys(files);
