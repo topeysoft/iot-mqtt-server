@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "dev": "concurrently \"grunt debug:build\" \"nodemon ./bin/www.js --env=development --port=4000\" ",
-    "serve": "concurrently \"npm run grunt:w\" \"nodemon --watch ./build ./bin/www.js --host=localhost --port=5200\"",
+    "serve": "concurrently \"npm run grunt:w\" \"nodemon --watch ./build ./bin/www.js --host=localhost --port=3000\"",
     "heroku:build": "grunt deploy",
     "grunt": "grunt",
     "heroku:deploy": "npm run heroku:build && cd ./deploy && git add . && git commit -am '.' && git push heroku master",
@@ -79,6 +79,7 @@
     "@types/errorhandler": "0.0.30",
     "@types/express": "^4.0.35",
     "@types/http-status-codes": "^1.0.29",
+    "@types/jimp": "^0.2.1",
     "@types/md5": "^2.1.32",
     "@types/method-override": "0.0.29",
     "@types/mongodb": "^2.1.41",

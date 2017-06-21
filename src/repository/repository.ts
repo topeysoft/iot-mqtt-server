@@ -104,6 +104,13 @@ export class Repository {
                 if (!info) return reject('File not found');
                 let tempFileName = path.join(tempFilePath, info.filename);
                 let dir = path.dirname(tempFileName);
+                try{
+                    let fileStat=fs.statSync(tempFileName);
+                    if(fileStat && fileStat.mtime.getTime()>info.uploadDate.getTime()){
+                        console.log('Using cached version');
+                        return resolve(path.resolve(tempFileName));
+                    }
+                }catch(err){}
                 try {
                     Repository.mkdirRecursive(dir);
                 } catch (err) {
