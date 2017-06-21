@@ -134,31 +134,7 @@ export class Repository {
     public static getManyFileInfo<T>(query): Promise<T[]> {
         return Repository.getMany<T>(`${Repository._bucketName}.files`, query);
     }
-    // public static createFileFromPath<T>(path: string | Buffer, folderAndFilename): Promise<T> {
-    //     return new Promise((resolve, reject) => {
-    //         try {
-    //             if (!path) throw new Error('File name was null');
-    //             fs.createReadStream(path).
-    //                 pipe(Repository._bucket.openUploadStream(folderAndFilename)).
-    //                 on('error', (error) => {
-    //                     reject(error);
-    //                 }).
-    //                 on('finish', () => {
-    //                     console.log(`${folderAndFilename} upload complete.`);
-    //                     Repository.getOneFileInfo({ filename: folderAndFilename })
-    //                         .then((file) => {
-    //                             console.log(`Found uploaded info.`);
-    //                             return resolve(file);
-    //                         }).catch(err => {
-    //                             console.log(`Unable to get uploaded info.`);
-    //                             return reject(err);
-    //                         })
-    //                 });
-    //         } catch (error) {
-    //             return reject(error);
-    //         }
-    //     })
-    // }
+    
     public static createFileFromPath<T>(path: string | Buffer, folderAndFilename): Promise<T> {
         return new Promise((resolve, reject) => {
             let query = { filename: folderAndFilename };

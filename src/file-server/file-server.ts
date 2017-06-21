@@ -65,7 +65,8 @@ export class FileServer {
             let file_id = req.url.replace('/view/', '');
             file_id = file_id.split('?')[0];
             let fileQuery = req.query;
-            console.log(fileQuery);
+            console.log('file-query', fileQuery);
+            console.log('file-id', file_id);
             let query: any = { filename: file_id };
             let tempFilePath = FileServer.tempPath;
 
