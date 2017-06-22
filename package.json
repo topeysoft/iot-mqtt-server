@@ -89,6 +89,7 @@
     "@types/shortid": "0.0.29",
     "ajv": "^5.1.5",
     "body-parser": "^1.17.1",
+    "checksum": "^0.1.1",
     "cli-color": "^1.2.0",
     "clor": "^5.1.0",
     "cookie-parser": "^1.4.3",

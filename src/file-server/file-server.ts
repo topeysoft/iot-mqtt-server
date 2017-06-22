@@ -7,6 +7,7 @@ import { Response, Request } from 'express';
 import { OK, BAD_REQUEST, INTERNAL_SERVER_ERROR, CREATED, MULTI_STATUS } from "http-status-codes";
 import { ObjectID } from "mongodb";
 var Jimp = require("jimp");
+var checksum = require("checksum");
 
 export class FileServer {
     static tempPath: string;
@@ -69,21 +70,26 @@ export class FileServer {
             console.log('file-id', file_id);
             let query: any = { filename: file_id };
             let tempFilePath = FileServer.tempPath;
+            let newFileName = `${tempFilePath}${checksum(req.url)}.jpg`;
+            if (fs.existsSync(newFileName)) {
+                console.log('Found existing temp file that matches this request checksum', newFileName);
+                return resp.status(OK).sendFile(path.resolve(newFileName));
+            }
 
             try {
                 query = { _id: ObjectID.createFromHexString(file_id) };
             } catch (error) { }
 
             Repository.getFileData(query, tempFilePath).then((tempFileName: any) => {
-                console.log('sending file ', tempFileName);
-                Jimp.read(tempFileName).then((image) => {
-                    FileServer.instance.processImageFile(tempFileName, fileQuery).then((newName:string) => {
-                        resp.status(OK).sendFile(newName);
-                    }).catch(err => {
-                        resp.status(OK).sendFile(tempFileName);
-                    });
-                }).catch((err) => {
-                    console.error(err);
+
+                if (!fileQuery) {
+                    console.log('No special image process required.');
+                    return resp.status(OK).sendFile(tempFileName);
+                }
+                FileServer.instance.processImageFile(tempFileName, fileQuery, newFileName).then((newName: string) => {
+                    console.log('sending file ', newFileName);
+                    resp.status(OK).sendFile(newName);
+                }).catch(err => {
                     resp.status(OK).sendFile(tempFileName);
                 });
             }).catch(err => {
@@ -95,38 +101,43 @@ export class FileServer {
     }
 
 
-    private processImageFile(tempFileName, params) {
+    private processImageFile(tempFileName, params, newFileName) {
         return new Promise((resolve, reject) => {
-            Jimp.read(tempFileName).then((image) => {
-                let fileExt = path.extname(tempFileName);
-                var newName = tempFileName.replace(fileExt, '-256' + fileExt);
-                try {
-                    let fnArray = this.parseImageProcessParameters(params)
-                    if (fnArray && fnArray.length > 0) {
-                        fnArray.forEach((fn, i) => {
-                            console.log('Applying image process: ', fn);
-                            image[fn.name].apply(image, fn.args);
-                            if (i >= (fnArray.length - 1)) {
-                                image.write(newName, () => {
-                                    resolve(newName)
-                                });
-                            }
-                        });
-                    } else {
-                        image.write(newName, () => {
-                            resolve(newName)
-                        });
+                    try {
+                console.log('Begin processing image file');
+                Jimp.read(tempFileName).then((image) => {
+                    try {
+                        let fnArray = this.parseImageProcessParameters(params)
+                        if (fnArray && fnArray.length > 0) {
+                            fnArray.forEach((fn, i) => {
+                                console.log('Applying image process: ', fn);
+                                image[fn.name].apply(image, fn.args);
+                                if (i >= (fnArray.length - 1)) {
+                                    image.write(newFileName, () => {
+                                        resolve(newFileName)
+                                    });
+                                }
+                            });
+                        } else {
+                            image.write(newFileName, () => {
+                                resolve(newFileName)
+                            });
+                        }
+
+                    } catch (error) {
+                        console.log('Image process error', error);
+                        resolve(tempFileName);
                     }
-
-                } catch (error) {
+                    // save 
+                }).catch((err) => {
+                    console.log('Error reading image for processing', err);
                     resolve(tempFileName);
-                }
-                // save 
-            }).catch((err) => {
-                console.error(err);
-                resolve(tempFileName);
 
-            });
+                });
+            } catch (error) {
+                console.log('Error while processing image', error);
+                resolve(tempFileName);
+            }
         });
     }
     parseImageProcessParameters(params) {
@@ -135,28 +146,28 @@ export class FileServer {
         width = params.w || params.width;
         height = params.h || params.height;
         quality = params.q || params.quality;
-      //  if (width && !height) height = width;
-      //  if (height && !width) width = height;
+        //  if (width && !height) height = width;
+        //  if (height && !width) width = height;
         if (width && !height) processFn.push({ name: 'resize', args: [+width, Jimp.AUTO] });
         else if (width && height) processFn.push({ name: 'resize', args: [+width, +height] });
-        if (params.scale!==undefined) processFn.push({ name: 'scale', args: [+params.scale] });
-        if (quality!==undefined) processFn.push({ name: 'quality', args: [+quality] });
-        if (params.greyscale!==undefined) processFn.push({ name: 'greyscale', args: [] });
-        if (params.grayscale!==undefined) processFn.push({ name: 'greyscale', args: [] });
-        if (params.normalize!==undefined) processFn.push({ name: 'normalize', args: [] });
-        if (params.invert!==undefined) processFn.push({ name: 'invert', args: [] });
-        if (params.sepia!==undefined) processFn.push({ name: 'sepia', args: [] });
-        if (params.dither565!==undefined) processFn.push({ name: 'dither565', args: [] });
-        if (params.opague!==undefined) processFn.push({ name: 'opaque', args: [] });
-        if (params.fade!==undefined) processFn.push({ name: 'fade', args: [+params.fade] });
-        if (params.background!==undefined) processFn.push({ name: 'background', args: [params.background] });
-        if (params.opacity!==undefined) processFn.push({ name: 'opacity', args: [+params.opacity] });
-        if (params.blur!==undefined) processFn.push({ name: 'blur', args: [+params.blur] });
-        if (params.gaussian!==undefined) processFn.push({ name: 'gaussian', args: [+params.gaussian] });
-        if (params.posterize!==undefined) processFn.push({ name: 'posterize', args: [+params.posterize] });
-        if (params.brightness!==undefined) processFn.push({ name: 'brightness', args: [+params.brightness] });
-        if (params.contrast!==undefined) processFn.push({ name: 'contrast', args: [+params.contrast] });
-        if (params.gaussian!==undefined) processFn.push({ name: 'gaussian', args: [+params.gaussian] });
+        if (params.scale !== undefined) processFn.push({ name: 'scale', args: [+params.scale] });
+        if (quality !== undefined) processFn.push({ name: 'quality', args: [+quality] });
+        if (params.greyscale !== undefined) processFn.push({ name: 'greyscale', args: [] });
+        if (params.grayscale !== undefined) processFn.push({ name: 'greyscale', args: [] });
+        if (params.normalize !== undefined) processFn.push({ name: 'normalize', args: [] });
+        if (params.invert !== undefined) processFn.push({ name: 'invert', args: [] });
+        if (params.sepia !== undefined) processFn.push({ name: 'sepia', args: [] });
+        if (params.dither565 !== undefined) processFn.push({ name: 'dither565', args: [] });
+        if (params.opague !== undefined) processFn.push({ name: 'opaque', args: [] });
+        if (params.fade !== undefined) processFn.push({ name: 'fade', args: [+params.fade] });
+        if (params.background !== undefined) processFn.push({ name: 'background', args: [params.background] });
+        if (params.opacity !== undefined) processFn.push({ name: 'opacity', args: [+params.opacity] });
+        if (params.blur !== undefined) processFn.push({ name: 'blur', args: [+params.blur] });
+        if (params.gaussian !== undefined) processFn.push({ name: 'gaussian', args: [+params.gaussian] });
+        if (params.posterize !== undefined) processFn.push({ name: 'posterize', args: [+params.posterize] });
+        if (params.brightness !== undefined) processFn.push({ name: 'brightness', args: [+params.brightness] });
+        if (params.contrast !== undefined) processFn.push({ name: 'contrast', args: [+params.contrast] });
+        if (params.gaussian !== undefined) processFn.push({ name: 'gaussian', args: [+params.gaussian] });
         return processFn;
     }
     getAllFiles(req: Request, resp: Response) {
@@ -306,26 +317,3 @@ export class FileServer {
 
 
 }
-
-
-// var fileId = new ObjectID();
-// var gridStore = new GridStore(db, fileId, "w", {root:'fs'});
-// gridStore.chunkSize = 1024 * 256;
-
-// gridStore.open(function(err, gridStore) {
-//  Step(
-//    function writeData() {
-//      var group = this.group();
-
-//      for(var i = 0; i < 1000000; i += 5000) {
-//        gridStore.write(new Buffer(5000), group());
-//      }
-//    },
-
-//    function doneWithWrite() {
-//      gridStore.close(function(err, result) {
-//        console.log("File has been written to GridFS");
-//      });
-//    }
-//  )
-// });
