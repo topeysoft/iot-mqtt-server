@@ -1,28 +1,71 @@
-# OtaPortal
+# Over The Air Update Portal
 
-This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 1.0.2.
+This project is responsible for managing and activating Over-The-Air Update System for my IOT MQTT Smart Server
 
-## Development server
+## Features (MVP)
 
-Run `ng serve` for a dev server. Navigate to `http://localhost:4200/`. The app will automatically reload if you change any of the source files.
+- Upload firmware versions
+- Update firmware details
+- Automatically heck if a device require update upon connection
+- Manually queue firmware updates for devices 
+- Force a device to use firmware with lower version number when necessary firmware updates for devices 
 
-## Code scaffolding
+### Future Features
+- Ability to group devices
+- Ability to send update to device within a group
+- Ability to view update history
 
-Run `ng generate component component-name` to generate a new component. You can also use `ng generate directive|pipe|service|class|module`.
 
-## Build
+## UI Specifications
 
-Run `ng build` to build the project. The build artifacts will be stored in the `dist/` directory. Use the `-prod` flag for a production build.
+### Application Header
+- These will be fixed at the top of every page of the app and will contain the following (in order)
+    - Brand (OTA  Portal)
+    - Search bar (with button on the right)
+    - Current user info (Logged in as user@email.com)
+    - a pipe character
+    - Sign out link (Sign out)
 
-## Running unit tests
+### Application Header
+- These will be below the header on the RHS at the same level with the rest of the page content and will contain the following links (in order)
+    - Dashboard 
+    - Firmwares
+    - Devices
+    - Groups (Future)
+    - History (Future)
 
-Run `ng test` to execute the unit tests via [Karma](https://karma-runner.github.io).
+### Grid/List of available firmwares
+- Shows a clearly visible title of the grid
+- Shows a clearly visible short description of the grid
+- Shows row header
+- Contains the following columns
+    - ID (toggleable)
+    - Name
+    - Version
+    - Date Added
+    - Options (Header can be blank)
+- Each row on the grid will have an 'options' button that will open a context/dropdown menu with these options:
+   - Queue for update
+   - Edit info
+   - Delete
+- Rows can be hoverable
 
-## Running end-to-end tests
+### Grid/List of available devices with their current online status
+- Shows a clearly visible title of the grid
+- Shows a clearly visible short description of the grid
+- Shows row header
+- Contains the following columns
+    - ID (toggleable)
+    - Name
+    - Firmaware Name
+    - Firmaware Version
+    - Status 
+    - Options (Header can be blank)
+- Each row on the grid will have an 'options' button that will open a context/dropdown menu with these options:
+    - Update firmware (must be hidden when not online)
+    - Add to group
+    - Enable/Disable Auto-Update
+- Rows can be hoverable
 
-Run `ng e2e` to execute the end-to-end tests via [Protractor](http://www.protractortest.org/).
-Before running the tests make sure you are serving the app via `ng serve`.
-
-## Further help
-
-To get more help on the Angular CLI use `ng help` or go check out the [Angular CLI README](https://github.com/angular/angular-cli/blob/master/README.md).
+### (Future) Grid/List of available devices with their current online status Device Update Groups
+- ...

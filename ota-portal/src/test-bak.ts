@@ -1,9 +1,5 @@
 // This file is required by karma.conf.js and loads recursively all the .spec and framework files
 
-
-import 'core-js/es6';
-import 'core-js/es7/reflect';
-
 import 'zone.js/dist/long-stack-trace-zone';
 import 'zone.js/dist/proxy.js';
 import 'zone.js/dist/sync-test';
@@ -16,6 +12,7 @@ import {
   platformBrowserDynamicTesting
 } from '@angular/platform-browser-dynamic/testing';
 // import 'zone.js/dist/jasmine-patch';
+
 // Unfortunately there's no typing for the `__karma__` variable. Just declare it as any.
 declare var __karma__: any;
 declare var require: any;

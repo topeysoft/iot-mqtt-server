@@ -1,0 +1,7 @@
+--require ts-node/register 
+--reporter dot
+--watch-extensions tsx,ts 
+./src/**/*spec.ts
+./src/**/*.test.ts
+./tests/**/*test.ts
+./tests/**/*test.ts
