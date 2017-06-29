@@ -5,7 +5,7 @@ import { DebugElement } from '@angular/core';
 
 import { HeaderComponent } from './header.component';
 
-describe('FirmwaresComponent', () => {
+fdescribe('HeaderComponent', () => {
   let component: HeaderComponent;
   let fixture: ComponentFixture<HeaderComponent>;
 
@@ -22,7 +22,12 @@ describe('FirmwaresComponent', () => {
     fixture.detectChanges();
   });
 
-  it('should create', () => {
+  it('should be created', () => {
     expect(component).toBeTruthy();
+    expect(component._host.nativeElement).toBeTruthy();
+  });
+  it('should contain header element', () => {
+  //  let headerElement = component._host.nativeElement.querySelector("header");
+   // expect(headerElement).toBeTruthy();
   });
 });

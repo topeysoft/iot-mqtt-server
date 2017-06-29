@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import {ElementRef, Component} from '@angular/core';
 
 @Component({
     moduleId: module.id,
@@ -7,5 +7,9 @@ import { Component } from '@angular/core';
     styleUrls: ['header.component.scss']
 })
 export class HeaderComponent {
-
+    /**
+     *
+     */
+    constructor(public _host:ElementRef) {
+    }
 }

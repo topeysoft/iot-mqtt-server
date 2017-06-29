@@ -2,6 +2,20 @@
 
 This project is responsible for managing and activating Over-The-Air Update System for my IOT MQTT Smart Server
 
+<!-- TOC -->
+
+- [Over The Air Update Portal](#over-the-air-update-portal)
+    - [Features (MVP)](#features-mvp)
+        - [Future Features](#future-features)
+    - [UI Specifications](#ui-specifications)
+        - [Application Header](#application-header)
+        - [Application Menu](#application-menu)
+        - [Grid/List of available firmwares](#gridlist-of-available-firmwares)
+        - [Grid/List of available devices with their current online status](#gridlist-of-available-devices-with-their-current-online-status)
+        - [(Future) Grid/List of available devices with their current online status Device Update Groups](#future-gridlist-of-available-devices-with-their-current-online-status-device-update-groups)
+
+<!-- /TOC -->
+
 ## Features (MVP)
 
 - Upload firmware versions
@@ -19,14 +33,14 @@ This project is responsible for managing and activating Over-The-Air Update Syst
 ## UI Specifications
 
 ### Application Header
-- These will be fixed at the top of every page of the app and will contain the following (in order)
+- This will be fixed at the top of every page of the app and will contain the following (in order)
     - Brand (OTA  Portal)
     - Search bar (with button on the right)
     - Current user info (Logged in as user@email.com)
     - a pipe character
     - Sign out link (Sign out)
 
-### Application Header
+### Application Menu
 - These will be below the header on the RHS at the same level with the rest of the page content and will contain the following links (in order)
     - Dashboard 
     - Firmwares
