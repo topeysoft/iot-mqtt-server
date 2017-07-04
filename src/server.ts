@@ -35,7 +35,6 @@ export class Server {
         this.api();
         this.mqttServer = new MqttServer();
         this.initializeRepository();
-        // this.otaServer = new OTAServer(this.app, this.mqttServer, otaConfig);
         this.setupEventHandler();
     }
     public app: Express;

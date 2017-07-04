@@ -44,16 +44,16 @@ export class OtaApiServer extends EventEmitter {
 
   setupListeners() {
     MqttMessageHandler.events.on('device:ready_for_firmware', (params) => {
-      this.publishFirware([params.deviceId]);
+      this.publishFirmware([params.deviceId]);
       console.log("DEVICE IS LISTENING", params);
     });
   }
 
 
-  publishFirware(deviceIds: string[]) {
+  publishFirmware(deviceIds: string[]) {
     if (!deviceIds || deviceIds.length < 1) return;
-    Repository.getOne('devices', { device_id: { $in: deviceIds } }).then((devices: SmartDevice[]) => {
-      Repository.getManyFileInfo({ name: { $in: devices.map(d => { return d.fw_name }) } }, 'firmwares')
+    Repository.getOne('devices', {query:{ device_id: { $in: deviceIds } }}).then((devices: SmartDevice[]) => {
+      Repository.getManyFileInfo({query:{ name: { $in: devices.map(d => { return d.fw_name }) } }}, 'firmwares')
         .then((firmwares) => {
           devices.forEach(d => {
             let firmware: any = firmwares.find((f: any) => { return f.name === d.fw_name });
