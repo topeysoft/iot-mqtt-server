@@ -1,4 +1,5 @@
 import * as bodyParser from "body-parser";
+import { OtaApiServer } from "./ota-server/ota-api-server";
 import { FileServer } from "./file-server/file-server";
 import * as cookieParser from "cookie-parser";
 import * as logger from "morgan";
@@ -17,10 +18,10 @@ import { RepositoryType } from './repository/repository-types';
 import { Passport, PassportStatic } from 'passport';
 import { PassportOpenIdMiddleware } from './middlewares/security/open-id/open-id';
 import { OTAServer } from "./ota-server/ota-server";
+import { MessengerService } from "./shared-services/messenger-service";
 const fileUpload = require('express-fileupload');
 
 export class Server {
-    otaServer: any;
     public static bootstrap(): Server {
         return new Server();
     }
@@ -30,25 +31,23 @@ export class Server {
         this.config();
         this.setupHeaders();
         this.routes();
-        let fileServer = new FileServer().getApp();
-        this.app.use('/file-api', fileServer);
+     
         this.api();
         this.mqttServer = new MqttServer();
         this.initializeRepository();
-        var otaConfig = ConfigManager.get('ota');
-        this.otaServer = new OTAServer(this.app, this.mqttServer, otaConfig);
-
+        // this.otaServer = new OTAServer(this.app, this.mqttServer, otaConfig);
+        this.setupEventHandler();
     }
     public app: Express;
     public passport: Passport | any;
 
-    public mqttServer;
+    public mqttServer:MqttServer;
 
 
     private config() {
         ConfigManager.initSync();
-        let config=ConfigManager.get('file_upload')||'';
-        let file_upload_limit = config.size_limit;
+        this.config=ConfigManager.getConfig();
+        let file_upload_limit = this.config['file_upload'].size_limit;
         //this.requestSizeLimit = this.config.request.size_limit || '1mb';
         this.app.use(express.static(path.join(__dirname, "public")));
         this.app.set("views", path.join(__dirname, "views"));
@@ -82,7 +81,11 @@ export class Server {
 
     }
     public api() {
-
+           let fileServer = new FileServer().getApp();
+           let otaServer =  OtaApiServer.getServer(this.config['ota']);
+         
+        this.app.use('/file-api', fileServer);
+        this.app.use('/api/ota', otaServer);
     }
     public setupHeaders() {
         new CorsFilterMiddleware(this.app);
@@ -96,8 +99,12 @@ export class Server {
         var config = ConfigManager.getConfig();
         let mongoOptions = { connectionUrl: config.mongodb.connectionUrl, force: true, fileBucketName: 'iot-hub-bucket' }
         Repository.initialize(mongoOptions);
-        // Repository.initialize(config.tingodb.dbPath, RepositoryType.TingoDB)
     }
 
+    private setupEventHandler(){
+         MessengerService.instance.on('OTA:publish_message', message=>{
+              this.mqttServer.publishMessage(message);
+          });
+    }
 
 }

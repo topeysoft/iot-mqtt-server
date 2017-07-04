@@ -260,7 +260,7 @@ export class FileServer {
                         throw new Error(message);
                     }
                     console.log('Saving to DB: ', { name: file.name });
-                    Repository.createFileFromPath<any>(tempFileName, filePath).then(result => {
+                    Repository.createFileFromPath<any>(tempFileName, filePath, req.body).then(result => {
                         fileResult.success = true;
                         if (result) {
                             result.url = FileServer.instance.getFileUrl(result, req);

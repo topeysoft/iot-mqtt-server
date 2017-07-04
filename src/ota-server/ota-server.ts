@@ -40,26 +40,10 @@ export class OTAServer {
               res.status(INTERNAL_SERVER_ERROR).send("Unable to complete your request.");
             }
         });
-    // if (!options.app) {
-    //   this.app = express();
-    //   this.server = createServer(this.app);
-    //   this.app.use('/ota', this._httpHandler);
-    // }
     this.mqttServer.on('ready', () => {
       this.setup();
       this.utilizeManifest();
     });
-    // let watcher = chokidar.watch(this.manifestPath);
-    // pauseable.pause(watcher); // Buffer events until dispatcher is ready
-    // dispatcher.on('ready', () => {
-    //   pauseable.resume(watcher);
-
-    //   this._loadManifest().then((manifest) => {
-    //     this.manifest = manifest;
-    //     if (this.manifest) {
-    //       this._warnDevices();
-    //     }
-    //   });
 
   }
 

@@ -14,16 +14,21 @@ export class Repository {
             MongoClient.connect(options.connectionUrl, (err: MongoError, database: Db) => {
                 if (err) return console.error("MongoDB Connection error:", err.message);
                 Repository._db = database;
-                Repository._bucketName = options.fileBucketName;
-                Repository._bucket = new GridFSBucket(Repository._db, { bucketName: Repository._bucketName });
+                Repository._bucketName = options.fileBucketName||"my_file_bucket";
+               // Repository._bucket = Repository.getBucket(Repository._bucketName );
             });
         }
+    }
+
+    private static getBucket(bucketName?:string){
+        bucketName=bucketName||Repository._bucketName;
+      return new GridFSBucket(Repository._db, { bucketName: bucketName });
     }
 
     private static _repo: Repository;
     private static _db: Db;
     private static _bucketName: string;
-    private static _bucket: GridFSBucket;
+  //  private static _bucket: GridFSBucket;
 
 
 
@@ -98,8 +103,9 @@ export class Repository {
 
 
     //  GRID FS
-    public static getFileData<T>(query, tempFilePath): Promise<T> {
-        return new Promise((resolve, reject) => {
+    public static getFileData<T>(query, tempFilePath, bucketName?:string): Promise<T> {
+          bucketName=bucketName||Repository._bucketName;
+          return new Promise((resolve, reject) => {
             Repository.getOneFileInfo(query).then((info: any) => {
                 if (!info) return reject('File not found');
                 let tempFileName = path.join(tempFilePath, info.filename);
@@ -117,7 +123,7 @@ export class Repository {
                     console.log('Unable to create dir', dir, err);
                 }
                 console.log('Opening stream');
-                Repository._bucket.openDownloadStreamByName(info.filename)
+                Repository.getBucket().openDownloadStreamByName(info.filename)
                     .pipe(fs.createWriteStream(tempFileName)).
                     on('error', (error) => {
                         console.log('Stream error', error);
@@ -135,14 +141,17 @@ export class Repository {
 
         })
     }
-    public static getOneFileInfo<T>(query): Promise<T> {
-        return Repository.getOne<T>(`${Repository._bucketName}.files`, query);
+    public static getOneFileInfo<T>(query, bucketName?:string): Promise<T> {
+        bucketName=bucketName||Repository._bucketName;
+        return Repository.getOne<T>(`${bucketName}.files`, query);
     }
-    public static getManyFileInfo<T>(query): Promise<T[]> {
-        return Repository.getMany<T>(`${Repository._bucketName}.files`, query);
+    public static getManyFileInfo<T>(query, bucketName?:string): Promise<T[]> {
+        bucketName=bucketName||Repository._bucketName;
+        return Repository.getMany<T>(`${bucketName}.files`, query);
     }
     
-    public static createFileFromPath<T>(path: string | Buffer, folderAndFilename): Promise<T> {
+    public static createFileFromPath<T>(path: string | Buffer, folderAndFilename, extraData?:any, bucketName?:string): Promise<T> {
+        bucketName=bucketName||Repository._bucketName;
         return new Promise((resolve, reject) => {
             let query = { filename: folderAndFilename };
 
@@ -150,10 +159,19 @@ export class Repository {
                 if(!folderAndFilename)  throw new Error('Output file name must be specified');
                 if (!path) throw new Error('File name was null');
                 folderAndFilename=folderAndFilename.split('?')[0];
-                Repository.beginUploadProcess(path, folderAndFilename).then(fileInfo => {
-                    resolve(fileInfo);
+                Repository.beginUploadProcess(path, folderAndFilename, bucketName).then((fileInfo:{_id:ObjectID}) => {
+                   if(fileInfo && extraData){
+                       let id=fileInfo._id.toHexString();
+                        Repository.updateFileMetaData(id, extraData, bucketName).then((info)=>{
+                            return resolve(Object.assign(fileInfo, info));
+                        }).catch(err=>{
+                            return resolve(fileInfo);
+                        });
+                   }else{
+                   return resolve(fileInfo);
+                   }
                 }).catch(err => {
-                    reject(err);
+                   return reject(err);
                 });
 
             } catch (error) {
@@ -162,7 +180,8 @@ export class Repository {
         })
     }
 
-    public static updateFileMetaData<T>(folderAndFilename_or_id, data): Promise<T> {
+    public static updateFileMetaData<T>(folderAndFilename_or_id, data, bucketName?:string): Promise<T> {
+          bucketName=bucketName||Repository._bucketName;
         return new Promise((resolve, reject) => {
             let file_id = folderAndFilename_or_id;
             let query: any = { filename: file_id };
@@ -170,9 +189,9 @@ export class Repository {
                 query = { _id: ObjectID.createFromHexString(file_id) };
             } catch (error) { }
             try {
-                console.log('Metadata', data);
-                Repository.updateOne<any>(`${Repository._bucketName}.files`, query, { metadata: data }).then(updated => {
-                    Repository.getOneFileInfo(query).then(fileInfo => {
+                console.log('Metadata', data, query, bucketName);
+                Repository.updateOne<any>(`${bucketName}.files`, query,  data ).then(updated => {
+                    Repository.getOneFileInfo(query, bucketName).then(fileInfo => {
                         resolve(fileInfo);
                     }).catch(err => {
                         reject(err);
@@ -186,7 +205,8 @@ export class Repository {
             }
         })
     }
-    public static renameFile<T>(id, newFilename): Promise<T> {
+    public static renameFile<T>(id, newFilename, bucketName?:string): Promise<T> {
+          bucketName=bucketName||Repository._bucketName;
         return new Promise((resolve, reject) => {
             try {
                 if(!newFilename) return new Error('New file name not specifed')
@@ -197,12 +217,12 @@ export class Repository {
             } catch (error) { }
            
                 newFilename=newFilename.split('?')[0];
-                Repository._bucket.rename(query._id, newFilename, (err) => {
+                Repository.getBucket(bucketName).rename(query._id, newFilename, (err) => {
                     if (err) {
                         console.log('Unable to rename file with id',  id);
                         return reject(err);
                     }
-                    Repository.getOneFileInfo(query).then(fileInfo => {
+                    Repository.getOneFileInfo(query, bucketName).then(fileInfo => {
                         resolve(fileInfo);
                     }).catch(err => {
                         console.log('Unable to get detail after renaming file with id', query._id);
@@ -216,7 +236,8 @@ export class Repository {
             }
         })
     }
-    public static deleteFile<T>(id): Promise<T> {
+    public static deleteFile<T>(id, bucketName?:string): Promise<T> {
+        bucketName=bucketName||Repository._bucketName;
         return new Promise((resolve, reject) => {
             let file_id = id;
             let query: any = { _id: file_id };
@@ -224,7 +245,7 @@ export class Repository {
                 query = { _id: ObjectID.createFromHexString(file_id) };
             } catch (error) { }
             try {
-                Repository._bucket.delete(query._id, (err) => {
+                Repository.getBucket(bucketName).delete(query._id, (err) => {
                     if (err) {
                         console.log('Unable to delete file with id', query._id);
                         return reject(err);
@@ -239,9 +260,11 @@ export class Repository {
         })
     }
 
-    private static beginUploadProcess(path, folderAndFilename) {
+    private static beginUploadProcess(path, folderAndFilename, bucketName?:string) {
+        bucketName=bucketName||Repository._bucketName;
         return new Promise((resolve, reject) => {
-            let bucketStream = Repository._bucket.openUploadStream(folderAndFilename);
+            let bucket= Repository.getBucket(bucketName);
+            let bucketStream = bucket.openUploadStream(folderAndFilename);
             fs.createReadStream(path).
                 pipe(bucketStream).
                 on('error', (error) => {
@@ -249,7 +272,7 @@ export class Repository {
                 }).
                 on('finish', () => {
                     console.log(`${folderAndFilename} upload complete.`);
-                    Repository.getOneFileInfo({ filename: folderAndFilename })
+                    Repository.getOneFileInfo({ filename: folderAndFilename }, bucketName)
                         .then((file) => {
                             console.log(`Found uploaded info.`);
                             return resolve(file);
